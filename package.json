@@ -1,0 +1,16 @@
+{
+  "name": "nc-clicker-game-v1",
+  "version": "1.0.0",
+  "description": "1N Blockchain Token Clicker - $CARD on TON",
+  "type": "module",
+  "scripts": {
+    "build:wallet": "node build-wallet.js",
+    "build": "npm run build:wallet"
+  },
+  "dependencies": {
+    "@tonconnect/sdk": "^2.2.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}
