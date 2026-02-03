@@ -3,9 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Token Clicker</title>
-  <!-- Pages: deploy from main / (root) -->
+  <!-- Fix GitHub Pages: base URL so scripts/assets load from repo root (e.g. /nc-clicker-game-v1/) -->
+  <script>
+    (function(){
+      var path = location.pathname.replace(/\/?$/, '');
+      var basePath = (path === '' ? '/' : path + '/');
+      document.write('<base href="' + location.origin + basePath + '" />');
+    })();
+  </script>
+  <title>1N Blockchain Token Clicker – Tap to earn $CARD</title>
+  <!-- Share preview: opens nicely on mobile when link is shared -->
+  <meta property="og:title" content="1N Blockchain Token Clicker" />
+  <meta property="og:description" content="Tap the Cardinal to earn tokens. Play on your phone – connect wallet, claim $CARD, challenge friends in PVP." />
+  <meta property="og:image" content="https://biggleem.github.io/nc-clicker-game-v1/assets/cardinal.png" />
+  <meta property="og:url" content="https://biggleem.github.io/nc-clicker-game-v1/" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="1N Blockchain Token Clicker" />
+  <meta name="twitter:description" content="Tap the Cardinal to earn tokens. Play on your phone – PVP with friends." />
   <link rel="icon" href="assets/cardinal.png" type="image/png" />
+  <link rel="apple-touch-icon" href="assets/cardinal.png" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -343,8 +360,8 @@
           <li>3. You — 0 tokens</li>
         </ol>
       </div>
-      <button type="button" id="invite-btn" class="w-full py-2 border-2 border-neon-cyan text-neon-cyan rounded hover:bg-neon-cyan/10">COPY INVITE LINK</button>
-      <p id="invite-feedback" class="text-neon-green text-[10px] mt-2 hidden">Link copied to clipboard!</p>
+      <button type="button" id="invite-btn" class="w-full py-2 border-2 border-neon-cyan text-neon-cyan rounded hover:bg-neon-cyan/10 min-h-[44px] text-[10px]">COPY INVITE LINK</button>
+      <p id="invite-feedback" class="text-neon-green text-[10px] mt-2 hidden">Link copied! Send it to friends – when they open it on their phone, the game loads and your code is applied.</p>
       <p class="text-gray-500 mt-2 text-[10px]">Your code: <span id="referral-code" class="neon-text-cyan">------</span></p>
     </section>
 
@@ -406,20 +423,36 @@
     <!-- Multiplayer -->
     <section id="page-multiplayer" class="page p-4">
       <h2 class="text-neon-pink mb-4 border-b-2 border-gray-700 pb-2">MULTIPLAYER</h2>
-      <p class="text-gray-400 mb-4">Lobby: 2-player rooms. Duel for NFTs.</p>
-      <div class="grid grid-cols-2 gap-2">
-        <div class="bg-pixel-panel border-2 border-gray-700 p-3 rounded text-center">
-          <div class="w-10 h-10 mx-auto pixel-border rounded bg-neon-pink/20 mb-2"></div>
-          <div class="text-[10px]">Room 1</div>
-          <div class="text-gray-500 text-[10px]">1/2</div>
+      <p class="text-gray-400 mb-4">Share the game. When friends open the link on their phone, they can play and challenge you.</p>
+      <!-- Share game: link that opens on mobile -->
+      <div class="bg-pixel-panel border-2 border-neon-pink/50 p-4 rounded mb-4">
+        <p class="text-neon-pink text-[10px] font-bold mb-2">📱 SHARE GAME</p>
+        <p class="text-gray-400 text-[9px] mb-3">Send this link – it opens in the browser on any device. On mobile, they tap to play and can join PVP.</p>
+        <div class="flex gap-2 flex-wrap items-center">
+          <button type="button" id="share-game-btn" class="py-2 px-4 border-2 border-neon-pink text-neon-pink rounded text-[10px] hover:bg-neon-pink/10 active:scale-[0.98] min-h-[44px]">COPY GAME LINK</button>
+          <button type="button" id="share-game-native-btn" class="py-2 px-4 border-2 border-neon-cyan text-neon-cyan rounded text-[10px] hover:bg-neon-cyan/10 active:scale-[0.98] min-h-[44px] hidden">SHARE (APP)</button>
         </div>
-        <div class="bg-pixel-panel border-2 border-gray-700 p-3 rounded text-center">
-          <div class="w-10 h-10 mx-auto pixel-border rounded bg-neon-cyan/20 mb-2"></div>
-          <div class="text-[10px]">Room 2</div>
-          <div class="text-gray-500 text-[10px]">0/2</div>
+        <p id="share-game-feedback" class="text-neon-green text-[9px] mt-2 hidden">Link copied! Paste in a message – friend opens it on their phone to play.</p>
+      </div>
+      <p class="text-gray-500 text-[9px] mb-3">Lobby: 2-player rooms. Create a new room or join an open one.</p>
+
+      <!-- Create new room – always visible -->
+      <div id="pvp-create-card" class="bg-pixel-panel border-2 border-neon-green/60 p-4 rounded mb-4">
+        <p class="text-neon-green text-[10px] font-bold mb-2">➕ CREATE NEW ROOM</p>
+        <p class="text-gray-400 text-[9px] mb-3">Start a room and share the link. Friends open it to join.</p>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" id="pvp-create-room-btn" class="py-2 px-4 border-2 border-neon-green text-neon-green rounded text-[10px] hover:bg-neon-green/10 min-h-[44px]">CREATE ROOM</button>
+          <button type="button" id="pvp-refresh-btn" class="py-2 px-4 border-2 border-gray-500 text-gray-400 rounded text-[10px] hover:bg-gray-700 min-h-[44px]">REFRESH LIST</button>
         </div>
       </div>
-      <p class="text-gray-500 mt-4 text-[10px]">Phase 4: join room → stake NFT → click race → winner takes NFT.</p>
+
+      <p id="pvp-status" class="text-[9px] text-gray-500 mb-2 min-h-[14px]"></p>
+      <p class="text-gray-500 text-[9px] mb-1">Open rooms first, then recent.</p>
+      <div id="pvp-rooms-list" class="grid grid-cols-1 gap-2">
+        <!-- Rooms loaded from Supabase -->
+      </div>
+      <p id="pvp-error" class="text-neon-pink text-[9px] mt-2 hidden"></p>
+      <p class="text-gray-500 mt-4 text-[10px]">Share a room link so a friend can join. Duel (click race) coming next.</p>
     </section>
   </main>
 
@@ -743,16 +776,64 @@
       });
     });
 
-    // Friends: copy invite link
+    // Share URL: use canonical game URL so shared links open on mobile (production site)
+    function getShareBaseUrl() {
+      var base = (window.TON_CONFIG && window.TON_CONFIG.gameBaseUrl) || (window.location.origin + window.location.pathname).replace(/\/$/, '');
+      return base;
+    }
+    function getInviteUrl() {
+      var code = localStorage.getItem('tokenClicker_refCode') || 'REF0000';
+      return getShareBaseUrl() + '/?ref=' + encodeURIComponent(code);
+    }
+    function getGameUrl() {
+      return getShareBaseUrl() + '/';
+    }
+
+    // Friends: copy invite link (canonical URL so it opens on mobile)
     const inviteBtn = document.getElementById('invite-btn');
     const inviteFeedback = document.getElementById('invite-feedback');
     if (inviteBtn) {
       inviteBtn.addEventListener('click', () => {
-        const code = localStorage.getItem('tokenClicker_refCode') || 'REF0000';
-        const url = window.location.origin + window.location.pathname + '?ref=' + encodeURIComponent(code);
-        navigator.clipboard.writeText(url).then(() => {
-          if (inviteFeedback) { inviteFeedback.classList.remove('hidden'); setTimeout(() => inviteFeedback.classList.add('hidden'), 2000); }
-        });
+        var url = getInviteUrl();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(() => {
+            if (inviteFeedback) { inviteFeedback.classList.remove('hidden'); setTimeout(() => inviteFeedback.classList.add('hidden'), 3000); }
+          }).catch(function() { fallbackCopy(url, inviteFeedback); });
+        } else { fallbackCopy(url, inviteFeedback); }
+      });
+    }
+
+    // PVP: Share game – copy link that opens on mobile
+    const shareGameBtn = document.getElementById('share-game-btn');
+    const shareGameNativeBtn = document.getElementById('share-game-native-btn');
+    const shareGameFeedback = document.getElementById('share-game-feedback');
+    function fallbackCopy(text, feedbackEl) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); if (feedbackEl) { feedbackEl.classList.remove('hidden'); setTimeout(function() { feedbackEl.classList.add('hidden'); }, 3000); } } catch (e) {}
+      document.body.removeChild(ta);
+    }
+    if (shareGameBtn) {
+      shareGameBtn.addEventListener('click', function() {
+        var url = getGameUrl();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(function() {
+            if (shareGameFeedback) { shareGameFeedback.classList.remove('hidden'); setTimeout(function() { shareGameFeedback.classList.add('hidden'); }, 4000); }
+          }).catch(function() { fallbackCopy(url, shareGameFeedback); });
+        } else { fallbackCopy(url, shareGameFeedback); }
+      });
+    }
+    if (shareGameNativeBtn && navigator.share) {
+      shareGameNativeBtn.classList.remove('hidden');
+      shareGameNativeBtn.addEventListener('click', function() {
+        navigator.share({
+          title: '1N Blockchain Token Clicker',
+          text: 'Tap the Cardinal to earn tokens. Play on your phone – PVP with friends!',
+          url: getGameUrl(),
+        }).then(function() { if (shareGameFeedback) { shareGameFeedback.textContent = 'Shared!'; shareGameFeedback.classList.remove('hidden'); setTimeout(function() { shareGameFeedback.classList.add('hidden'); }, 3000); } }).catch(function() {});
       });
     }
 
@@ -997,6 +1078,130 @@
       document.getElementById('withdraw-area').querySelector('.text-[10px]').textContent = 'Set backendUrl in ton-config.js to enable withdraw.';
     }
 
+    // --- PVP: rooms from Supabase ---
+    function getPvpPlayerId() {
+      if (window.TonWallet && typeof window.TonWallet.getAddress === 'function') {
+        var addr = window.TonWallet.getAddress();
+        if (addr) return addr;
+      }
+      var guest = localStorage.getItem('tokenClicker_pvp_guest_id');
+      if (!guest) {
+        guest = 'guest_' + Math.random().toString(36).slice(2, 10);
+        localStorage.setItem('tokenClicker_pvp_guest_id', guest);
+      }
+      return guest;
+    }
+    function loadPvpRooms() {
+      var list = document.getElementById('pvp-rooms-list');
+      var status = document.getElementById('pvp-status');
+      var errEl = document.getElementById('pvp-error');
+      if (!list) return;
+      if (errEl) errEl.classList.add('hidden');
+      var supabase = window.supabaseClient;
+      if (!supabase) {
+        if (status) status.textContent = 'Supabase not configured.';
+        list.innerHTML = '<p class="text-gray-500 text-[10px] p-3">Add Supabase URL and anon key in supabase-config.js and run the migration.</p>';
+        return;
+      }
+      if (status) status.textContent = 'Loading rooms…';
+      supabase.from('rooms').select('id, status, player1_wallet, player2_wallet, created_at').order('created_at', { ascending: false }).limit(20)
+        .then(function(r) {
+          if (status) status.textContent = '';
+          if (r.error) {
+            if (status) status.textContent = 'Could not load rooms.';
+            if (errEl) { errEl.textContent = r.error.message || 'Error'; errEl.classList.remove('hidden'); }
+            list.innerHTML = '';
+            return;
+          }
+          var rooms = r.data || [];
+          var order = { open: 0, in_progress: 1, finished: 2 };
+          rooms.sort(function(a, b) {
+            var oa = order[a.status] !== undefined ? order[a.status] : 3;
+            var ob = order[b.status] !== undefined ? order[b.status] : 3;
+            if (oa !== ob) return oa - ob;
+            return new Date(b.created_at) - new Date(a.created_at);
+          });
+          var me = getPvpPlayerId();
+          list.innerHTML = rooms.map(function(room) {
+            var p1 = room.player1_wallet || '—';
+            var p2 = room.player2_wallet || '—';
+            var count = (p1 && p1 !== '—' ? 1 : 0) + (p2 && p2 !== '—' ? 1 : 0);
+            var isOpen = room.status === 'open' && count < 2;
+            var isMine = p1 === me || p2 === me;
+            var shortId = room.id.slice(0, 8);
+            var joinBtn = isOpen && p1 !== me ? '<button type="button" class="pvp-join-btn mt-2 py-1 px-2 border border-neon-cyan text-neon-cyan rounded text-[9px] hover:bg-neon-cyan/10" data-room-id="' + room.id + '">JOIN</button>' : '';
+            var shareLink = (window.TON_CONFIG && window.TON_CONFIG.gameBaseUrl ? window.TON_CONFIG.gameBaseUrl : (window.location.origin + window.location.pathname)) + '/?room=' + room.id;
+            return '<div class="bg-pixel-panel border-2 border-gray-700 p-3 rounded text-left">' +
+              '<div class="text-[10px] text-neon-pink">Room ' + shortId + (isMine ? ' (you)' : '') + '</div>' +
+              '<div class="text-gray-500 text-[9px] mt-1">' + count + '/2 · ' + room.status + '</div>' +
+              joinBtn +
+              '<button type="button" class="pvp-copy-link-btn mt-2 ml-2 py-1 px-2 border border-gray-500 text-gray-400 rounded text-[9px] hover:bg-gray-700" data-room-id="' + room.id + '" data-room-url="' + shareLink + '">COPY LINK</button>' +
+              '</div>';
+          }).join('');
+          if (rooms.length === 0) list.innerHTML = '<p class="text-gray-500 text-[10px] p-3">No rooms yet. Create one above.</p>';
+          list.querySelectorAll('.pvp-join-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() { joinPvpRoom(btn.getAttribute('data-room-id')); });
+          });
+          list.querySelectorAll('.pvp-copy-link-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              var url = btn.getAttribute('data-room-url');
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(function() {
+                  var status = document.getElementById('pvp-status');
+                  if (status) { status.textContent = 'Room link copied! Send to a friend.'; status.classList.remove('text-gray-500'); status.classList.add('text-neon-green'); setTimeout(function() { status.textContent = ''; status.classList.add('text-gray-500'); status.classList.remove('text-neon-green'); }, 3000); }
+                });
+              }
+            });
+          });
+        })
+        .catch(function(e) {
+          if (status) status.textContent = '';
+          if (errEl) { errEl.textContent = e.message || 'Network error'; errEl.classList.remove('hidden'); }
+          list.innerHTML = '';
+        });
+    }
+    function createPvpRoom() {
+      var supabase = window.supabaseClient;
+      var btn = document.getElementById('pvp-create-room-btn');
+      var errEl = document.getElementById('pvp-error');
+      if (!supabase) { if (errEl) { errEl.textContent = 'Supabase not configured.'; errEl.classList.remove('hidden'); } return; }
+      if (btn) btn.disabled = true;
+      var me = getPvpPlayerId();
+      supabase.from('rooms').insert({ status: 'open', player1_wallet: me }).select('id').single()
+        .then(function(r) {
+          if (btn) btn.disabled = false;
+          if (r.error) { if (errEl) { errEl.textContent = r.error.message || 'Failed to create room'; errEl.classList.remove('hidden'); } return; }
+          var status = document.getElementById('pvp-status');
+          if (status) { status.textContent = 'Room created! It appears below (open rooms first).'; status.className = 'text-[9px] text-neon-green mb-2 min-h-[14px]'; setTimeout(function() { status.textContent = ''; status.className = 'text-[9px] text-gray-500 mb-2 min-h-[14px]'; }, 4000); }
+          loadPvpRooms();
+          if (errEl) errEl.classList.add('hidden');
+        })
+        .catch(function(e) {
+          if (btn) btn.disabled = false;
+          if (errEl) { errEl.textContent = e.message || 'Error'; errEl.classList.remove('hidden'); }
+        });
+    }
+    function joinPvpRoom(roomId) {
+      var supabase = window.supabaseClient;
+      var errEl = document.getElementById('pvp-error');
+      if (!supabase || !roomId) return;
+      var me = getPvpPlayerId();
+      supabase.from('rooms').update({ player2_wallet: me, status: 'in_progress', updated_at: new Date().toISOString() }).eq('id', roomId).eq('status', 'open')
+        .then(function(r) {
+          if (r.error) { if (errEl) { errEl.textContent = r.error.message || 'Could not join'; errEl.classList.remove('hidden'); } return; }
+          loadPvpRooms();
+          if (errEl) errEl.classList.add('hidden');
+        })
+        .catch(function(e) {
+          if (errEl) { errEl.textContent = e.message || 'Error'; errEl.classList.remove('hidden'); }
+        });
+    }
+    var pvpCreateBtn = document.getElementById('pvp-create-room-btn');
+    var pvpRefreshBtn = document.getElementById('pvp-refresh-btn');
+    if (pvpCreateBtn) pvpCreateBtn.addEventListener('click', createPvpRoom);
+    if (pvpRefreshBtn) pvpRefreshBtn.addEventListener('click', function() { loadPvpRooms(); });
+    window.loadPvpRooms = loadPvpRooms;
+
     document.addEventListener('keydown', (e) => { if (e.key === 'Enter') e.preventDefault(); });
     setInterval(updateClicksPerSecond, 200);
 
@@ -1013,6 +1218,7 @@
         a.classList.toggle('text-neon-cyan', a.getAttribute('data-page') === pageId);
         a.classList.toggle('text-gray-400', a.getAttribute('data-page') !== pageId);
       });
+      if (pageId === 'multiplayer' && typeof window.loadPvpRooms === 'function') window.loadPvpRooms();
     }
     window.addEventListener('hashchange', () => showPage(getPageFromHash()));
 
@@ -1047,6 +1253,11 @@
       createStars();
       updateBountyProgress();
       save();
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('room')) {
+        window.location.hash = 'multiplayer';
+        if (typeof window.loadPvpRooms === 'function') setTimeout(window.loadPvpRooms, 300);
+      }
       showPage(getPageFromHash());
       updateUI();
     });
