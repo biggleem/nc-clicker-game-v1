@@ -1427,14 +1427,15 @@
             var shortId = room.id.slice(0, 8);
             var joinBtn = isOpen && p1 !== me ? '<button type="button" class="pvp-join-btn mt-2 py-1 px-2 border border-neon-cyan text-neon-cyan rounded text-[9px] hover:bg-neon-cyan/10" data-room-id="' + room.id + '">JOIN</button>' : '';
             var enterDuelBtn = room.status === 'in_progress' && isMine ? '<button type="button" class="pvp-enter-duel-btn mt-2 py-1 px-2 border border-neon-green text-neon-green rounded text-[9px] hover:bg-neon-green/10" data-room-id="' + room.id + '">ENTER DUEL</button>' : '';
-            var closeBtn = room.status === 'open' && p1 === me ? '<button type="button" class="pvp-close-room-btn mt-2 py-1 px-2 border border-neon-pink text-neon-pink rounded text-[9px] hover:bg-neon-pink/10" data-room-id="' + room.id + '">CLOSE ROOM</button>' : '';
+            var isCreator = p1 === me;
+            var closeBtn = room.status === 'open' && isCreator ? '<button type="button" class="pvp-close-room-btn flex-shrink-0 py-2 px-3 border-2 border-neon-pink text-neon-pink rounded text-[10px] font-bold hover:bg-neon-pink/10 min-h-[36px]" data-room-id="' + room.id + '">CLOSE ROOM</button>' : '';
             var base = (window.TON_CONFIG && window.TON_CONFIG.gameBaseUrl ? window.TON_CONFIG.gameBaseUrl : (window.location.origin + window.location.pathname)).replace(/\/?$/, '');
             var shareLink = base + '/play.html?room=' + room.id;
             var cardAction = isOpen && p1 !== me ? 'join' : (room.status === 'in_progress' && isMine ? 'enter-duel' : '');
             return '<div class="pvp-room-card bg-pixel-panel border-2 border-gray-700 p-3 rounded text-left cursor-pointer hover:border-gray-500" data-room-id="' + room.id + '" data-room-action="' + cardAction + '">' +
-              '<div class="text-[10px] text-neon-pink">Room ' + shortId + (isMine ? ' (you)' : '') + '</div>' +
+              '<div class="text-[10px] text-neon-pink">Room ' + shortId + (isMine ? ' (you)' : '') + (isCreator && room.status === 'open' ? ' · You created' : '') + '</div>' +
               '<div class="text-gray-500 text-[9px] mt-1">' + count + '/2 · ' + room.status + '</div>' +
-              '<div class="mt-2 flex flex-wrap gap-2 items-center">' + joinBtn + enterDuelBtn + closeBtn +
+              '<div class="mt-2 flex flex-wrap gap-2 items-center">' + closeBtn + joinBtn + enterDuelBtn +
               '<button type="button" class="pvp-copy-link-btn py-1 px-2 border border-gray-500 text-gray-400 rounded text-[9px] hover:bg-gray-700" data-room-id="' + room.id + '" data-room-url="' + shareLink + '">COPY LINK</button>' +
               '</div></div>';
           }).join('');
