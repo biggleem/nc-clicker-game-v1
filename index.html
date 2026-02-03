@@ -968,6 +968,7 @@
         friendInviteFeedback.textContent = "Friend added! You're linked to code " + code + ".";
         friendInviteFeedback.classList.add('text-neon-green');
         updateFriendInviteCurrentDisplay();
+        if (typeof loadFriendsInvited === 'function') loadFriendsInvited();
         setTimeout(function() { friendInviteFeedback.classList.add('hidden'); }, 4000);
       });
     }
@@ -1314,21 +1315,61 @@
       var supabase = window.supabaseClient;
       var list = document.getElementById('friends-invited-list');
       if (!supabase || !list) return;
-      var refCode = localStorage.getItem('tokenClicker_refCode') || '';
-      if (!refCode) { list.innerHTML = '<li class="text-gray-500">Your code not set yet.</li>'; return; }
-      supabase.from('referrals').select('invited_name, invited_wallet, created_at').eq('inviter_ref_code', refCode).order('created_at', { ascending: false }).limit(50)
-        .then(function(r) {
-          if (r.error || !r.data || r.data.length === 0) {
-            list.innerHTML = '<li class="text-gray-500">No one has used your invite link yet.</li>';
-            return;
+      var myRefCode = localStorage.getItem('tokenClicker_refCode') || '';
+      var friendCode = localStorage.getItem('tokenClicker_invitedBy') || '';
+      if (!myRefCode && !friendCode) {
+        list.innerHTML = '<li class="text-gray-500">No friends yet. Share your invite link or add a friend above.</li>';
+        return;
+      }
+      var tasks = [];
+      if (friendCode) {
+        tasks.push(
+          supabase.from('leaderboard').select('name, wallet_address, ref_code').eq('ref_code', friendCode).maybeSingle().then(function(r) {
+            return { kind: 'friend', result: r, code: friendCode };
+          })
+        );
+      }
+      if (myRefCode) {
+        tasks.push(
+          supabase.from('referrals').select('invited_name, invited_wallet, created_at').eq('inviter_ref_code', myRefCode).order('created_at', { ascending: false }).limit(50)
+            .then(function(r) { return { kind: 'invited', result: r }; })
+        );
+      }
+      Promise.all(tasks).then(function(results) {
+        var items = [];
+        results.forEach(function(entry) {
+          if (!entry || !entry.kind) return;
+          if (entry.kind === 'friend') {
+            var r = entry.result || {};
+            if (r.error) {
+              // If lookup fails, still show the code the user added
+              items.push('Friend (code: ' + entry.code + ') — you used their invite.');
+            } else if (r.data) {
+              var row = r.data;
+              var name = row.name || 'Friend';
+              var w = row.wallet_address ? (row.wallet_address.slice(0, 6) + '…') : '';
+              items.push('Friend: ' + name + (w ? ' (' + w + ')' : '') + ' — you used their invite.');
+            } else {
+              items.push('Friend (code: ' + entry.code + ') — you used their invite.');
+            }
+          } else if (entry.kind === 'invited') {
+            var rr = entry.result || {};
+            if (rr.error || !rr.data || rr.data.length === 0) return;
+            rr.data.forEach(function(e, i) {
+              var name2 = e.invited_name || 'Player';
+              var wallet2 = e.invited_wallet ? (e.invited_wallet.slice(0, 6) + '…') : '';
+              items.push((i + 1) + '. ' + name2 + (wallet2 ? ' (' + wallet2 + ')' : ''));
+            });
           }
-          list.innerHTML = r.data.map(function(e, i) {
-            var name = e.invited_name || 'Player';
-            var wallet = e.invited_wallet ? (e.invited_wallet.slice(0, 6) + '…') : '';
-            return (i + 1) + '. ' + name + (wallet ? ' (' + wallet + ')' : '');
-          }).join('\n');
-        })
-        .catch(function() { list.innerHTML = '<li class="text-gray-500">Could not load.</li>'; });
+        });
+        if (!items.length) {
+          list.innerHTML = '<li class="text-gray-500">No friends yet. Share your invite link or add a friend above.</li>';
+        } else {
+          list.innerHTML = items.map(function(t) { return '<li class=\"text-gray-300\">' + t + '</li>'; }).join('\\n');
+        }
+      }).catch(function() {
+        list.innerHTML = '<li class=\"text-gray-500\">Could not load.</li>';
+      });
     }
     function persistNameToLeaderboard() {
       var name = getPlayerName();
