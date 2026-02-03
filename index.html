@@ -56,6 +56,11 @@
     /* Bottom nav: hide scrollbar but keep scroll on small devices */
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
+    /* Responsive bottom nav: safe area + compact on small screens */
+    .nav-bottom { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+    .nav-link { font-size: 0.5rem; padding: 0.35rem 0.5rem; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+    @media (min-width: 380px) { .nav-link { font-size: 0.5625rem; padding: 0.4rem 0.6rem; } }
+    @media (min-width: 480px) { .nav-link { font-size: 0.625rem; padding: 0.5rem 0.75rem; } }
     .pixel-border { border: 3px solid #333; image-rendering: pixelated; }
     .neon-text-cyan { color: #00fff7; text-shadow: 0 0 10px #00fff7; }
     .neon-text-pink { color: #ff00aa; text-shadow: 0 0 10px #ff00aa; }
@@ -250,15 +255,15 @@
       <!-- Metric windows above NFT -->
       <div class="grid grid-cols-3 gap-2 mb-4">
         <div class="bg-pixel-panel border-2 border-gray-700 p-2 text-center rounded">
-          <div class="text-gray-500 text-[10px]">CLICKS/S</div>
+          <div class="text-gray-500 text-[10px]">CLICKS/SEC</div>
           <div id="clicks-per-sec" class="neon-text-green">0</div>
         </div>
         <div class="bg-pixel-panel border-2 border-gray-700 p-2 text-center rounded">
-          <div class="text-gray-500 text-[10px]">TOTAL</div>
+          <div class="text-gray-500 text-[10px]">Total Taps</div>
           <div id="total-clicks" class="neon-text-cyan">0</div>
         </div>
         <div class="bg-pixel-panel border-2 border-gray-700 p-2 text-center rounded">
-          <div class="text-gray-500 text-[10px]">RATE</div>
+          <div class="text-gray-500 text-[10px]">Tap Rate</div>
           <div id="token-rate" class="neon-text-yellow">1 / 10</div>
         </div>
       </div>
@@ -477,7 +482,7 @@
       <!-- Invited to duel: shown when URL has ?room= (open room link) -->
       <div id="pvp-invited-card" class="hidden mb-4 p-4 rounded-lg border-2 border-neon-cyan bg-neon-cyan/5">
         <p class="text-neon-cyan text-[10px] font-bold mb-1">YOU’RE INVITED TO A DUEL</p>
-        <p class="text-gray-300 text-[9px] mb-3">Open this link to join the room and play. Enter your name, connect wallet (1 $CARD), then join.</p>
+        <p class="text-gray-300 text-[9px] mb-3">Open this link to join the room and play. Enter your name, then join the duel using your in-game tokens.</p>
         <button type="button" id="pvp-invited-join-btn" class="w-full py-3 px-4 border-2 border-neon-green text-neon-green rounded text-[10px] font-bold hover:bg-neon-green/10 min-h-[48px]">JOIN & PLAY</button>
         <p id="pvp-invited-room-id" class="text-gray-500 text-[8px] mt-2 truncate"></p>
       </div>
@@ -504,7 +509,7 @@
       </div>
 
       <p id="pvp-status" class="text-[9px] text-gray-500 mb-2 min-h-[14px]"></p>
-      <p class="text-gray-500 text-[9px] mb-1">Open rooms first, then recent. Stake: 1 $CARD to play — loser loses it.</p>
+      <p class="text-gray-500 text-[9px] mb-1">Open rooms first, then recent. Stake: 50 tokens per player — loser loses their tokens.</p>
       <div id="pvp-rooms-list" class="grid grid-cols-1 gap-2">
         <!-- Rooms loaded from Supabase -->
       </div>
@@ -547,15 +552,15 @@
     </section>
   </main>
 
-  <!-- Bottom Nav: scrolls horizontally on small screens -->
-  <nav class="fixed bottom-0 left-0 right-0 z-50 bg-black/95 border-t-2 border-pixel-border max-w-lg mx-auto overflow-hidden">
-    <div class="flex flex-nowrap justify-start gap-1 py-2 px-2 overflow-x-auto overflow-y-hidden scroll-smooth scrollbar-hide min-h-[44px] items-center" style="-webkit-overflow-scrolling: touch;">
-      <a href="#home" class="nav-link flex-shrink-0 px-3 py-2 rounded text-[10px] whitespace-nowrap" data-page="home">HOME</a>
-      <a href="#boosts" class="nav-link flex-shrink-0 px-3 py-2 rounded text-[10px] whitespace-nowrap" data-page="boosts">BOOSTS</a>
-      <a href="#bounties" class="nav-link flex-shrink-0 px-3 py-2 rounded text-[10px] whitespace-nowrap" data-page="bounties">BOUNTIES</a>
-      <a href="#friends" class="nav-link flex-shrink-0 px-3 py-2 rounded text-[10px] whitespace-nowrap" data-page="friends">FRIENDS</a>
-      <a href="#wallet" class="nav-link flex-shrink-0 px-3 py-2 rounded text-[10px] whitespace-nowrap" data-page="wallet">WALLET</a>
-      <a href="#multiplayer" class="nav-link flex-shrink-0 px-3 py-2 rounded text-[10px] whitespace-nowrap" data-page="multiplayer">PVP</a>
+  <!-- Bottom Nav: scrolls horizontally on small screens, responsive sizing -->
+  <nav class="nav-bottom fixed bottom-0 left-0 right-0 z-50 bg-black/95 border-t-2 border-pixel-border max-w-lg mx-auto overflow-hidden">
+    <div class="flex flex-nowrap justify-start gap-0.5 sm:gap-1 py-1.5 sm:py-2 px-2 overflow-x-auto overflow-y-hidden scroll-smooth scrollbar-hide min-h-[44px] items-center pr-4" style="-webkit-overflow-scrolling: touch;">
+      <a href="#home" class="nav-link flex-shrink-0 rounded whitespace-nowrap" data-page="home">HOME</a>
+      <a href="#boosts" class="nav-link flex-shrink-0 rounded whitespace-nowrap" data-page="boosts">BOOSTS</a>
+      <a href="#bounties" class="nav-link flex-shrink-0 rounded whitespace-nowrap" data-page="bounties">BOUNTIES</a>
+      <a href="#friends" class="nav-link flex-shrink-0 rounded whitespace-nowrap" data-page="friends">FRIENDS</a>
+      <a href="#wallet" class="nav-link flex-shrink-0 rounded whitespace-nowrap" data-page="wallet">WALLET</a>
+      <a href="#multiplayer" class="nav-link flex-shrink-0 rounded whitespace-nowrap" data-page="multiplayer">PVP</a>
     </div>
   </nav>
   </div>
@@ -960,26 +965,44 @@
       } catch (e) { console.warn('TonConnect UI init:', e); }
     }
     var lastCardBalanceFetch = 0;
+    var balanceFetchFailed = false;
     function fetchCardBalanceFromBackend() {
       const TW = window.TonWallet;
       const backendUrl = (window.TON_CONFIG && window.TON_CONFIG.backendUrl) || '';
-      if (!TW || !backendUrl) return;
+      if (!TW) return;
       const addr = TW.getAddress();
       if (!addr) return;
-      if (Date.now() - lastCardBalanceFetch < 15000) return;
+      if (!backendUrl) {
+        balanceFetchFailed = false;
+        updateWalletUI();
+        return;
+      }
+      if (Date.now() - lastCardBalanceFetch < 15000 && !balanceFetchFailed) return;
       lastCardBalanceFetch = Date.now();
+      balanceFetchFailed = false;
       fetch(backendUrl.replace(/\/$/, '') + '/api/wallet/card-balance?address=' + encodeURIComponent(addr))
-        .then(function(r) { return r.json(); })
+        .then(function(r) {
+          if (!r.ok) throw new Error('Backend returned ' + r.status);
+          return r.json();
+        })
         .then(function(data) {
           if (data && data.balance != null && TW.setCardBalance) TW.setCardBalance(data.balance);
+          balanceFetchFailed = false;
+          setWalletStatus('');
           updateWalletUI();
         })
-        .catch(function() { updateWalletUI(); });
+        .catch(function(e) {
+          balanceFetchFailed = true;
+          if (TW.setCardBalance) TW.setCardBalance(null);
+          setWalletStatus('Could not retrieve balance. Check backend URL and CORS.', true);
+          updateWalletUI();
+        });
     }
     function updateWalletUI() {
       const TW = window.TonWallet;
       if (!TW) return;
       const addr = TW.getAddress();
+      const backendUrl = (window.TON_CONFIG && window.TON_CONFIG.backendUrl) || '';
       const connectArea = document.getElementById('wallet-connect-area');
       const connectedArea = document.getElementById('wallet-connected-area');
       const tonAddress = document.getElementById('ton-address');
@@ -987,21 +1010,22 @@
       if (connectArea) connectArea.classList.toggle('hidden', !!addr);
       if (connectedArea) connectedArea.classList.toggle('hidden', !addr);
       if (tonAddress && addr) tonAddress.textContent = addr.slice(0, 8) + '…' + addr.slice(-8);
-      if (cardBalanceEl) {
+      var balanceText = '—';
+      if (addr) {
         if (TW.cardBalance != null && TW.cardBalance !== undefined) {
-          cardBalanceEl.textContent = String(TW.cardBalance);
+          balanceText = String(TW.cardBalance);
+        } else if (!backendUrl) {
+          balanceText = '—';
+          setWalletStatus('Backend not set. Add backendUrl in ton-config.js to see $CARD balance.', true);
+        } else if (balanceFetchFailed) {
+          balanceText = '—';
         } else {
-          cardBalanceEl.textContent = addr ? '…' : '—';
+          balanceText = '…';
         }
       }
+      if (cardBalanceEl) cardBalanceEl.textContent = balanceText;
       var cardTop = document.getElementById('wallet-card-balance-top');
-      if (cardTop) {
-        if (TW.cardBalance != null && TW.cardBalance !== undefined) {
-          cardTop.textContent = String(TW.cardBalance);
-        } else {
-          cardTop.textContent = addr ? '…' : '—';
-        }
-      }
+      if (cardTop) cardTop.textContent = balanceText;
       if (addr) {
         fetchCardBalanceFromBackend();
         persistNameToLeaderboard();
@@ -1203,8 +1227,8 @@
       document.getElementById('withdraw-area').querySelector('.text-[10px]').textContent = 'Set backendUrl in ton-config.js to enable withdraw.';
     }
 
-    // --- PVP: player name, onboarding, 1 $CARD requirement ---
-    var PVP_STAKE = 1;
+    // --- PVP: player name + token stake ---
+    var PVP_STAKE = 50; // tokens required per duel participant
     var PVP_GAME_DURATION_SEC = 30;
     var PVP_CLICK_COOLDOWN_MS = 200;
 
@@ -1447,8 +1471,10 @@
       var name = getPlayerName();
       if (!name) setPlayerName('Player');
       name = getPlayerName();
-      if (!window.TonWallet || !window.TonWallet.getAddress()) { showPvpOnboarding('wallet'); return; }
-      if (!hasWalletAndStake()) { showPvpOnboarding('card'); return; }
+      if (typeof tokens === 'number' && tokens < PVP_STAKE) {
+        if (errEl) { errEl.textContent = 'You need at least ' + PVP_STAKE + ' tokens to start a duel.'; errEl.classList.remove('hidden'); }
+        return;
+      }
       if (btn) btn.disabled = true;
       var me = getPvpPlayerId();
       supabase.from('rooms').insert({ status: 'open', player1_wallet: me, player1_name: name, stake_amount: PVP_STAKE }).select('id').single()
@@ -1530,8 +1556,10 @@
       var name = getPlayerName();
       if (!name) setPlayerName('Player');
       name = getPlayerName();
-      if (!window.TonWallet || !window.TonWallet.getAddress()) { showPvpOnboarding('wallet', roomId); return; }
-      if (!hasWalletAndStake()) { showPvpOnboarding('card', roomId); return; }
+      if (typeof tokens === 'number' && tokens < PVP_STAKE) {
+        if (errEl) { errEl.textContent = 'You need at least ' + PVP_STAKE + ' tokens to join a duel.'; errEl.classList.remove('hidden'); }
+        return;
+      }
       var me = getPvpPlayerId();
       supabase.from('rooms').select('status, player1_wallet, player2_wallet').eq('id', roomId).single().then(function(check) {
         if (check.error || !check.data) { if (errEl) { errEl.textContent = 'Room not found.'; errEl.classList.remove('hidden'); } return; }
@@ -1694,11 +1722,11 @@
       if (winnerWallet === me) {
         document.getElementById('pvp-duel-result-title').textContent = 'YOU WIN!';
         document.getElementById('pvp-duel-result-title').className = 'text-lg font-bold mb-2 neon-text-green';
-        document.getElementById('pvp-duel-result-detail').textContent = 'You\'re on the leaderboard. Loser loses 1 $CARD (transfer can be added later).';
+        document.getElementById('pvp-duel-result-detail').textContent = 'You\'re on the leaderboard. Loser loses their token stake.';
       } else if (winnerWallet) {
         document.getElementById('pvp-duel-result-title').textContent = 'YOU LOSE';
         document.getElementById('pvp-duel-result-title').className = 'text-lg font-bold mb-2 neon-text-pink';
-        document.getElementById('pvp-duel-result-detail').textContent = winName + ' won. You lose your 1 $CARD stake.';
+        document.getElementById('pvp-duel-result-detail').textContent = winName + ' won. You lose your token stake.';
       } else {
         document.getElementById('pvp-duel-result-title').textContent = 'DRAW';
         document.getElementById('pvp-duel-result-title').className = 'text-lg font-bold mb-2 text-gray-400';
