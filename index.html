@@ -568,9 +568,9 @@
     <section id="page-friends" class="page p-4">
       <h2 class="text-neon-pink mb-4 border-b-2 border-gray-700 pb-2">FRIENDS</h2>
       <p class="text-gray-400 mb-4">Leaderboard & invite friends. Edit your name in Wallet → Settings.</p>
-      <div class="bg-pixel-panel border-2 border-neon-pink/30 p-3 rounded mb-4">
-        <div class="text-[10px] text-gray-500 mb-2">PVP DUEL WINS (TOP 5)</div>
-        <ol id="leaderboard-pvp-list" class="space-y-1 text-[10px] list-decimal list-inside text-gray-300 min-h-[24px]">
+      <div class="bg-pixel-panel border-2 border-gray-700 p-3 rounded mb-4">
+        <div class="text-[10px] text-gray-500 mb-2">TOP CLICKERS (by tokens)</div>
+        <ol id="leaderboard-list" class="space-y-1 text-[10px] list-decimal list-inside text-gray-300 min-h-[24px]">
           <li class="text-gray-500">Loading…</li>
         </ol>
       </div>
@@ -592,14 +592,6 @@
         <div class="text-[10px] text-gray-500 mt-2 mb-1">FRIENDS (ADDED BY CODE)</div>
         <ol id="friends-added-list" class="space-y-1 text-[10px] min-h-[24px]">
           <li class="text-gray-500">Loading…</li>
-        </ol>
-      </div>
-      <div class="bg-pixel-panel border-2 border-gray-700 p-3 rounded mb-4">
-        <div class="text-[10px] text-gray-500 mb-2">TOP CLICKERS (by tokens)</div>
-        <ol id="leaderboard-list" class="space-y-1 text-[10px]">
-          <li>1. Alpha — 500 tokens</li>
-          <li>2. Beta — 300 tokens</li>
-          <li>3. You — 0 tokens</li>
         </ol>
       </div>
       <button type="button" id="invite-btn" class="w-full py-2 border-2 border-neon-cyan text-neon-cyan rounded hover:bg-neon-cyan/10 min-h-[44px] text-[10px]">COPY INVITE LINK</button>
@@ -674,6 +666,13 @@
     <section id="page-multiplayer" class="page p-4">
       <h2 class="text-neon-pink mb-4 border-b-2 border-gray-700 pb-2">MULTIPLAYER</h2>
       <p class="text-gray-400 mb-4">Share the game. When friends open the link on their phone, they can play and challenge you.</p>
+      <!-- PVP wins leaderboard – at top of PVP page -->
+      <div class="bg-pixel-panel border-2 border-neon-pink/30 p-3 rounded mb-4">
+        <div class="text-[10px] text-gray-500 mb-2">PVP DUEL WINS (TOP 5)</div>
+        <ol id="leaderboard-pvp-list" class="space-y-1 text-[10px] list-decimal list-inside text-gray-300 min-h-[24px]">
+          <li class="text-gray-500">Loading…</li>
+        </ol>
+      </div>
       <!-- Invited to duel: shown when URL has ?room= (open room link) -->
       <div id="pvp-invited-card" class="hidden mb-4 p-4 rounded-lg border-2 border-neon-cyan bg-neon-cyan/5">
         <p class="text-neon-cyan text-[10px] font-bold mb-1">YOU’RE INVITED TO A DUEL</p>
@@ -1088,9 +1087,10 @@
       try { localStorage.setItem('tokenClicker_leaderboard', JSON.stringify(leaderboard)); } catch (_) {}
       const list = document.getElementById('leaderboard-list');
       if (list) {
-        list.innerHTML = leaderboard.slice(0, 10).map((e, i) =>
-          (i + 1) + '. ' + e.name + ' — ' + e.tokens + ' tokens'
-        ).join('\n');
+        var name = function(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+        list.innerHTML = leaderboard.slice(0, 10).map(function(e) {
+          return '<li>' + name(e.name) + ' — ' + e.tokens + ' tokens</li>';
+        }).join('');
       }
       if (typeof loadLeaderboardPvp === 'function') loadLeaderboardPvp();
       if (typeof loadFriendsInvited === 'function') loadFriendsInvited();
@@ -2617,13 +2617,13 @@
       if (pageId === 'friends') {
         if (typeof loadFriendsInvited === 'function') loadFriendsInvited();
         if (typeof loadFriendsAddedByCode === 'function') loadFriendsAddedByCode();
-        if (typeof loadLeaderboardPvp === 'function') loadLeaderboardPvp();
       }
       if (pageId === 'wallet') {
         if (typeof updateProfileDisplayName === 'function') updateProfileDisplayName();
         if (typeof fetchTonPrice === 'function') fetchTonPrice();
       }
       if (pageId === 'multiplayer') {
+        if (typeof loadLeaderboardPvp === 'function') loadLeaderboardPvp();
         if (typeof window.loadPvpRooms === 'function') window.loadPvpRooms();
         var invitedCard = document.getElementById('pvp-invited-card');
         if (invitedCard) invitedCard.classList.add('hidden');
