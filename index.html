@@ -1737,21 +1737,34 @@
             });
             return;
           }
-          list.innerHTML = r.data.map(function(e, i) {
+          var wallets = r.data.map(function(e) { return (e.invited_wallet || '').trim(); }).filter(Boolean);
+          var tokensByWallet = {};
+          if (wallets.length > 0) {
+            supabase.from('leaderboard').select('wallet_address, tokens').in('wallet_address', wallets).then(function(lr) {
+              if (lr.data) lr.data.forEach(function(row) { tokensByWallet[row.wallet_address] = row.tokens != null ? row.tokens : 0; });
+              renderInvitedList(r.data, tokensByWallet);
+            });
+          } else {
+            renderInvitedList(r.data, {});
+          }
+          function renderInvitedList(data, tokensByWallet) {
+            list.innerHTML = data.map(function(e, i) {
             var name = e.invited_name || 'Player';
             var wallet = (e.invited_wallet || '').trim();
             var walletShort = wallet ? (wallet.slice(0, 6) + '…') : '';
+            var tokens = tokensByWallet[wallet] != null ? tokensByWallet[wallet] : null;
+            var tokenStr = tokens != null ? ' — ' + tokens + ' tokens' : '';
             var nameEsc = (name || '').replace(/"/g, '&quot;');
             var walletEsc = (wallet || '').replace(/"/g, '&quot;');
             return '<li class="flex flex-wrap items-center gap-2 py-1 border-b border-gray-700/50 last:border-0">' +
-              '<span class="flex-1 min-w-0">' + (i + 1) + '. ' + name + (walletShort ? ' (' + walletShort + ')' : '') + '</span>' +
+              '<span class="flex-1 min-w-0">' + (i + 1) + '. ' + name + (walletShort ? ' (' + walletShort + ')' : '') + tokenStr + '</span>' +
               '<span class="flex gap-1 shrink-0">' +
               '<button type="button" class="invited-duel-btn py-1 px-2 border border-neon-green text-neon-green rounded text-[9px] hover:bg-neon-green/10" data-name="' + nameEsc + '" data-wallet="' + walletEsc + '">DUEL</button>' +
               '<button type="button" class="invited-remove-btn py-1 px-2 border border-neon-pink text-neon-pink rounded text-[9px] hover:bg-neon-pink/10" data-name="' + nameEsc + '" data-wallet="' + walletEsc + '">REMOVE</button>' +
               '</span></li>';
           }).join('');
-          var refCode = localStorage.getItem('tokenClicker_refCode') || '';
-          list.querySelectorAll('.invited-remove-btn').forEach(function(btn) {
+            var refCode = localStorage.getItem('tokenClicker_refCode') || '';
+            list.querySelectorAll('.invited-remove-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
               var name = btn.getAttribute('data-name') || 'this friend';
               if (!confirm('Do you want to remove ' + name + '?')) return;
@@ -1762,12 +1775,13 @@
               });
             });
           });
-          list.querySelectorAll('.invited-duel-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-              var name = btn.getAttribute('data-name') || 'Friend';
-              startDuelWithFriend(name);
+            list.querySelectorAll('.invited-duel-btn').forEach(function(btn) {
+              btn.addEventListener('click', function() {
+                var name = btn.getAttribute('data-name') || 'Friend';
+                startDuelWithFriend(name);
+              });
             });
-          });
+          }
         })
         .catch(function() { list.innerHTML = '<li class="text-gray-500">Could not load.</li>'; });
     }
@@ -1824,11 +1838,25 @@
             list.innerHTML = '<li class="text-gray-500">No friends added by code yet. Enter a code above.</li>';
             return;
           }
-          list.innerHTML = r.data.map(function(e, i) {
+          var codes = r.data.map(function(e) { return (e.friend_ref_code || '').trim(); }).filter(Boolean);
+          var tokensByCode = {};
+          if (codes.length > 0) {
+            supabase.from('leaderboard').select('ref_code, tokens').in('ref_code', codes).then(function(lr) {
+              if (lr.data) lr.data.forEach(function(row) { tokensByCode[(row.ref_code || '').toUpperCase()] = row.tokens != null ? row.tokens : 0; });
+              renderAddedList(r.data, tokensByCode);
+            });
+          } else {
+            renderAddedList(r.data, {});
+          }
+          function renderAddedList(data, tokensByCode) {
+            list.innerHTML = data.map(function(e, i) {
             var name = (e.friend_name || e.friend_ref_code || 'Friend').replace(/"/g, '&quot;');
             var code = (e.friend_ref_code || '').replace(/"/g, '&quot;');
+            var codeUpper = (e.friend_ref_code || '').trim().toUpperCase();
+            var tokens = tokensByCode[codeUpper] != null ? tokensByCode[codeUpper] : null;
+            var tokenStr = tokens != null ? ' — ' + tokens + ' tokens' : '';
             return '<li class="flex flex-wrap items-center gap-2 py-1 border-b border-gray-700/50 last:border-0">' +
-              '<span class="flex-1 min-w-0">' + (i + 1) + '. ' + (e.friend_name || e.friend_ref_code || 'Friend') + '</span>' +
+              '<span class="flex-1 min-w-0">' + (i + 1) + '. ' + (e.friend_name || e.friend_ref_code || 'Friend') + tokenStr + '</span>' +
               '<span class="flex gap-1 shrink-0">' +
               '<button type="button" class="friend-duel-btn py-1 px-2 border border-neon-green text-neon-green rounded text-[9px] hover:bg-neon-green/10" data-name="' + name + '" data-ref="' + code + '">DUEL</button>' +
               '<button type="button" class="friend-remove-btn py-1 px-2 border border-neon-pink text-neon-pink rounded text-[9px] hover:bg-neon-pink/10" data-name="' + name + '" data-ref="' + code + '">REMOVE</button>' +
@@ -1852,6 +1880,7 @@
               startDuelWithFriend(name);
             });
           });
+          }
         })
         .catch(function() { list.innerHTML = '<li class="text-gray-500">Could not load.</li>'; });
     }
@@ -2075,10 +2104,11 @@
         return;
       }
       if (status) status.textContent = 'Loading rooms…';
-      // Auto-close open rooms that no one joined after 1 minute
-      var oneMinAgo = new Date(Date.now() - 60 * 1000).toISOString();
-      supabase.from('rooms').update({ status: 'finished', updated_at: new Date().toISOString() }).eq('status', 'open').lt('created_at', oneMinAgo).then(function() {});
-      supabase.from('rooms').select('id, status, player1_wallet, player2_wallet, player1_name, player2_name, player1_clicks, player2_clicks, game_started_at, game_ends_at, winner_wallet, stake_amount, created_at').order('created_at', { ascending: false }).limit(20)
+      var nowIso = new Date().toISOString();
+      var fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      supabase.from('rooms').update({ status: 'finished', updated_at: nowIso }).eq('status', 'open').lt('created_at', fiveMinAgo).then(function() {});
+      supabase.from('rooms').update({ status: 'finished', updated_at: nowIso }).eq('status', 'in_progress').lt('game_ends_at', nowIso).then(function() {});
+      supabase.from('rooms').select('id, status, player1_wallet, player2_wallet, player1_name, player2_name, player1_clicks, player2_clicks, game_started_at, game_ends_at, winner_wallet, stake_amount, created_at').order('created_at', { ascending: false }).limit(50)
         .then(function(r) {
           if (status) status.textContent = '';
           if (r.error) {
@@ -2088,9 +2118,9 @@
             return;
           }
           var rooms = (r.data || []).filter(function(room) {
-            if (room.status !== 'finished') return true;
+            if (room.status === 'open' || room.status === 'in_progress') return true;
             var ageMs = Date.now() - new Date(room.created_at).getTime();
-            return ageMs < 60 * 60 * 1000;
+            return ageMs < 30 * 60 * 1000;
           });
           var order = { open: 0, in_progress: 1, finished: 2 };
           rooms.sort(function(a, b) {
@@ -2111,7 +2141,7 @@
             var enterDuelBtn = room.status === 'in_progress' && isMine ? '<button type="button" class="pvp-enter-duel-btn mt-2 py-1 px-2 border border-neon-green text-neon-green rounded text-[9px] hover:bg-neon-green/10" data-room-id="' + room.id + '">ENTER DUEL</button>' : '';
             var closeBtn = room.status === 'open' && p1 === me ? '<button type="button" class="pvp-close-room-btn mt-2 py-1 px-2 border border-neon-pink text-neon-pink rounded text-[9px] hover:bg-neon-pink/10" data-room-id="' + room.id + '">CLOSE ROOM</button>' : '';
             var base = (window.TON_CONFIG && window.TON_CONFIG.gameBaseUrl ? window.TON_CONFIG.gameBaseUrl : (window.location.origin + window.location.pathname)).replace(/\/?$/, '');
-            var shareLink = base + '/play.html?room=' + room.id;
+            var shareLink = base + '/?room=' + room.id;
             var stake = room.stake_amount != null ? parseInt(room.stake_amount, 10) : 5;
             if (isNaN(stake) || stake < 1) stake = 5;
             var cardAction = isOpen && p1 !== me ? 'join' : (room.status === 'in_progress' && isMine ? 'enter-duel' : '');
@@ -2384,7 +2414,7 @@
             document.getElementById('pvp-duel-opp-clicks').textContent = String(pvpDuelMyRole === 1 ? room.player2_clicks : room.player1_clicks);
             if (room.status === 'finished') { if (pvpDuelPollId) clearInterval(pvpDuelPollId); pvpDuelPollId = null; if (pvpDuelTimerId) clearInterval(pvpDuelTimerId); pvpDuelTimerId = null; endDuelGame(); }
           });
-        }, 600);
+        }, 250);
       });
     }
     function startDuelTimer(endsAtMs) {
