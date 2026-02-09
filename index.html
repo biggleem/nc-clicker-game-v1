@@ -60,6 +60,12 @@
     /* Bottom nav: hide scrollbar but keep scroll on small devices */
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
+    /* Bottom nav: center and fit on small screens */
+    .bottom-nav-inner { display: flex; flex-wrap: nowrap; justify-content: center; align-items: center; gap: 2px; padding: 6px 8px; min-height: 44px; }
+    @media (min-width: 400px) { .bottom-nav-inner { gap: 4px; padding: 8px 10px; } }
+    .bottom-nav-link { flex-shrink: 0; padding: 6px 8px; font-size: 8px; border-radius: 6px; white-space: nowrap; }
+    @media (min-width: 360px) { .bottom-nav-link { padding: 6px 10px; font-size: 9px; } }
+    @media (min-width: 400px) { .bottom-nav-link { padding: 8px 12px; font-size: 10px; } }
     .pixel-border { border: 3px solid #333; image-rendering: pixelated; }
     .neon-text-cyan { color: #00fff7; text-shadow: 0 0 10px #00fff7; }
     .neon-text-pink { color: #ff00aa; text-shadow: 0 0 10px #ff00aa; }
@@ -720,15 +726,14 @@
     </section>
   </main>
 
-  <!-- Bottom Nav: scrolls horizontally on small screens -->
-  <nav class="fixed bottom-0 left-0 right-0 z-50 bg-black/95 border-t-2 border-pixel-border max-w-lg mx-auto overflow-hidden">
-    <div class="flex flex-nowrap justify-start gap-1 py-2 px-2 overflow-x-auto overflow-y-hidden scroll-smooth scrollbar-hide min-h-[44px] items-center" style="-webkit-overflow-scrolling: touch;">
-      <a href="#home" class="nav-link flex-shrink-0 px-3 py-2 rounded text-[10px] whitespace-nowrap" data-page="home">HOME</a>
-      <a href="#boosts" class="nav-link flex-shrink-0 px-3 py-2 rounded text-[10px] whitespace-nowrap" data-page="boosts">BOOSTS</a>
-      <a href="#bounties" class="nav-link flex-shrink-0 px-3 py-2 rounded text-[10px] whitespace-nowrap" data-page="bounties">BOUNTIES</a>
-      <a href="#friends" class="nav-link flex-shrink-0 px-3 py-2 rounded text-[10px] whitespace-nowrap" data-page="friends">FRIENDS</a>
-      <a href="#wallet" class="nav-link flex-shrink-0 px-3 py-2 rounded text-[10px] whitespace-nowrap" data-page="wallet">WALLET</a>
-      <a href="#multiplayer" class="nav-link flex-shrink-0 px-3 py-2 rounded text-[10px] whitespace-nowrap" data-page="multiplayer">PVP</a>
+  <!-- Bottom Nav: centered, responsive so full menu fits on screen -->
+  <nav class="fixed bottom-0 left-0 right-0 z-50 bg-black/95 border-t-2 border-pixel-border max-w-lg mx-auto">
+    <div class="bottom-nav-inner">
+      <a href="#home" class="nav-link bottom-nav-link" data-page="home">HOME</a>
+      <a href="#boosts" class="nav-link bottom-nav-link" data-page="boosts">BOOSTS</a>
+      <a href="#bounties" class="nav-link bottom-nav-link" data-page="bounties">BOUNTIES</a>
+      <a href="#friends" class="nav-link bottom-nav-link" data-page="friends">FRIENDS</a>
+      <a href="#wallet" class="nav-link bottom-nav-link" data-page="wallet">WALLET</a>
     </div>
   </nav>
   </div>
