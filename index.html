@@ -328,18 +328,18 @@
       <button type="button" id="wallet-settings-modal-close" class="mt-4 w-full py-2 border-2 border-gray-500 text-gray-400 rounded text-[10px] hover:bg-gray-700">CLOSE</button>
     </div>
   </div>
-  <!-- PVP Onboarding: name + wallet + 1 $CARD (only when creating/joining a room without name) -->
+  <!-- PVP Onboarding: name + enough in-game tokens for wager -->
   <div id="pvp-onboarding-modal" class="hidden" style="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.9);display:none;align-items:center;justify-content:center;padding:20px;">
     <div class="bg-pixel-panel border-2 border-neon-pink rounded-lg p-6 max-w-sm w-full text-center">
       <p class="text-neon-pink text-[10px] font-bold mb-3">JOIN PVP DUEL</p>
-      <p id="pvp-onboarding-msg" class="text-gray-300 text-[9px] mb-4">Enter your name to play. You need a connected wallet and 1 $CARD to duel.</p>
+      <p id="pvp-onboarding-msg" class="text-gray-300 text-[9px] mb-4">Enter your name to play. You need enough in-game tokens for the room's wager.</p>
       <input type="text" id="pvp-onboarding-name" placeholder="Your name" maxlength="20" class="w-full bg-black border-2 border-gray-600 rounded px-3 py-2 text-white text-[10px] mb-3" />
       <div id="pvp-onboarding-step-connect" class="hidden mb-3">
-        <p class="text-neon-yellow text-[9px] mb-2">Connect your TON wallet (Wallet tab) and have at least 1 $CARD to play.</p>
+        <p class="text-neon-yellow text-[9px] mb-2">You need enough in-game tokens for the room's wager. Earn tokens by tapping or claiming bounties.</p>
         <a href="#wallet" class="inline-block py-2 px-4 border-2 border-neon-cyan text-neon-cyan rounded text-[10px]">GO TO WALLET</a>
       </div>
       <div id="pvp-onboarding-step-card" class="hidden mb-3">
-        <p class="text-neon-yellow text-[9px]">You need at least <strong>1 $CARD</strong> in your wallet to enter a duel. Loser loses their stake.</p>
+        <p class="text-neon-yellow text-[9px]">You need at least the room's wager in in-game tokens. Loser pays winner.</p>
       </div>
       <div class="flex gap-2 justify-center flex-wrap">
         <button type="button" id="pvp-onboarding-save" class="py-2 px-4 border-2 border-neon-green text-neon-green rounded text-[10px] hover:bg-neon-green/10">SAVE & CONTINUE</button>
@@ -663,7 +663,7 @@
       <!-- Invited to duel: shown when URL has ?room= (open room link) -->
       <div id="pvp-invited-card" class="hidden mb-4 p-4 rounded-lg border-2 border-neon-cyan bg-neon-cyan/5">
         <p class="text-neon-cyan text-[10px] font-bold mb-1">YOU’RE INVITED TO A DUEL</p>
-        <p class="text-gray-300 text-[9px] mb-3">Open this link to join the room and play. Enter your name, connect wallet (1 $CARD), then join.</p>
+        <p class="text-gray-300 text-[9px] mb-3">Open this link to join the room and play. Enter your name and have enough in-game tokens for the wager, then join.</p>
         <button type="button" id="pvp-invited-join-btn" class="w-full py-3 px-4 border-2 border-neon-green text-neon-green rounded text-[10px] font-bold hover:bg-neon-green/10 min-h-[48px]">JOIN & PLAY</button>
         <p id="pvp-invited-room-id" class="text-gray-500 text-[8px] mt-2 truncate"></p>
       </div>
@@ -682,15 +682,32 @@
       <!-- Create new room – always visible -->
       <div id="pvp-create-card" class="bg-pixel-panel border-2 border-neon-green/60 p-4 rounded mb-4">
         <p class="text-neon-green text-[10px] font-bold mb-2">➕ CREATE NEW ROOM</p>
-        <p class="text-gray-400 text-[9px] mb-3">Start a room and share the link. Friends open it to join.</p>
+        <p class="text-gray-400 text-[9px] mb-2">Wager in-game tokens. Loser pays winner. Choose stake:</p>
+        <div class="flex flex-wrap gap-2 mb-2">
+          <button type="button" class="pvp-stake-btn py-1.5 px-2 border-2 border-gray-600 text-gray-400 rounded text-[9px] hover:border-neon-green/50" data-stake="2">2</button>
+          <button type="button" class="pvp-stake-btn py-1.5 px-2 border-2 border-neon-green text-neon-green rounded text-[9px] bg-neon-green/10" data-stake="5">5</button>
+          <button type="button" class="pvp-stake-btn py-1.5 px-2 border-2 border-gray-600 text-gray-400 rounded text-[9px] hover:border-neon-green/50" data-stake="7">7</button>
+          <button type="button" class="pvp-stake-btn py-1.5 px-2 border-2 border-gray-600 text-gray-400 rounded text-[9px] hover:border-neon-green/50" data-stake="10">10</button>
+        </div>
+        <p class="text-gray-500 text-[8px] mb-1">Or custom wager (tokens):</p>
+        <div class="flex flex-wrap gap-2 items-center mb-3">
+          <input type="number" id="pvp-custom-stake" min="1" max="999" placeholder="e.g. 20" class="w-16 bg-black border-2 border-gray-600 rounded px-2 py-1 text-[10px] text-white" />
+          <span class="text-gray-500 text-[9px]">— joiner accepts by joining</span>
+        </div>
         <div class="flex flex-wrap gap-2">
           <button type="button" id="pvp-create-room-btn" class="py-2 px-4 border-2 border-neon-green text-neon-green rounded text-[10px] hover:bg-neon-green/10 min-h-[44px]">CREATE ROOM</button>
           <button type="button" id="pvp-refresh-btn" class="py-2 px-4 border-2 border-gray-500 text-gray-400 rounded text-[10px] hover:bg-gray-700 min-h-[44px]">REFRESH LIST</button>
         </div>
       </div>
+      <!-- Play vs Computer: no friends / no stake needed -->
+      <div class="bg-pixel-panel border-2 border-neon-yellow/60 p-4 rounded mb-4">
+        <p class="text-neon-yellow text-[10px] font-bold mb-2">🖥️ PLAY VS COMPUTER</p>
+        <p class="text-gray-400 text-[9px] mb-3">No friends online? Tap against the computer. No wallet or stake required. Practice only.</p>
+        <button type="button" id="pvp-vs-computer-btn" class="py-2 px-4 border-2 border-neon-yellow text-neon-yellow rounded text-[10px] hover:bg-neon-yellow/10 min-h-[44px]">PLAY VS COMPUTER</button>
+      </div>
 
       <p id="pvp-status" class="text-[9px] text-gray-500 mb-2 min-h-[14px]"></p>
-      <p class="text-gray-500 text-[9px] mb-1">Open rooms first, then recent. Stake: 1 $CARD to play — loser loses it.</p>
+      <p class="text-gray-500 text-[9px] mb-1">Open rooms first, then recent. Stake is in-game tokens — loser pays winner.</p>
       <div id="pvp-rooms-list" class="grid grid-cols-1 gap-2">
         <!-- Rooms loaded from Supabase -->
       </div>
@@ -1649,10 +1666,12 @@
       }
     }
 
-    // --- PVP: player name, onboarding, 1 $CARD requirement ---
-    var PVP_STAKE = 1;
+    // --- PVP: token stakes, countdown ---
+    var PVP_DEFAULT_STAKE = 5;
     var PVP_GAME_DURATION_SEC = 30;
+    var PVP_COUNTDOWN_SEC = 4;
     var PVP_CLICK_COOLDOWN_MS = 200;
+    var PVP_PRESET_STAKES = [2, 5, 7, 10];
 
     function getPlayerName() {
       return (localStorage.getItem('tokenClicker_playerName') || '').trim().slice(0, 20) || null;
@@ -1686,7 +1705,18 @@
       supabase.from('referrals').select('invited_name, invited_wallet, created_at').eq('inviter_ref_code', refCode).order('created_at', { ascending: false }).limit(50)
         .then(function(r) {
           if (r.error || !r.data || r.data.length === 0) {
-            list.innerHTML = '<li class="text-gray-500">No one has used your invite link yet.</li>';
+            list.innerHTML = '<li class="text-gray-500">No one has used your invite link yet.</li>' +
+              '<li class="mt-2"><button type="button" id="friends-play-vs-computer-btn" class="py-2 px-3 border-2 border-neon-yellow text-neon-yellow rounded text-[9px] hover:bg-neon-yellow/10">Play vs Computer</button></li>';
+            var btn = document.getElementById('friends-play-vs-computer-btn');
+            if (btn) btn.addEventListener('click', function() {
+              try { sessionStorage.setItem('tokenClicker_startVsComputer', '1'); } catch (e) {}
+              window.location.hash = 'multiplayer';
+              showPage('multiplayer');
+              if (typeof window.startVsComputer === 'function') {
+                try { sessionStorage.removeItem('tokenClicker_startVsComputer'); } catch (e) {}
+                window.startVsComputer();
+              }
+            });
             return;
           }
           list.innerHTML = r.data.map(function(e, i) {
@@ -1712,11 +1742,14 @@
         }
       });
     }
-    function hasWalletAndStake() {
-      if (!window.TonWallet || !window.TonWallet.getAddress()) return false;
-      var bal = window.TonWallet.cardBalance;
-      if (bal == null || bal === undefined) return false;
-      return Number(bal) >= PVP_STAKE;
+    function getInGameTokenBalance() {
+      if (typeof tokens !== 'undefined') return Math.max(0, parseInt(tokens, 10));
+      return Math.max(0, parseInt(localStorage.getItem('tokenClicker_tokens') || '0', 10));
+    }
+    function hasEnoughTokens(stake) {
+      var s = parseInt(stake, 10);
+      if (isNaN(s) || s < 1) return false;
+      return getInGameTokenBalance() >= s;
     }
     function showPvpOnboarding(reason, roomId) {
       return;
@@ -1878,7 +1911,7 @@
       // Auto-close open rooms that no one joined after 1 minute
       var oneMinAgo = new Date(Date.now() - 60 * 1000).toISOString();
       supabase.from('rooms').update({ status: 'finished', updated_at: new Date().toISOString() }).eq('status', 'open').lt('created_at', oneMinAgo).then(function() {});
-      supabase.from('rooms').select('id, status, player1_wallet, player2_wallet, player1_name, player2_name, player1_clicks, player2_clicks, game_started_at, game_ends_at, winner_wallet, created_at').order('created_at', { ascending: false }).limit(20)
+      supabase.from('rooms').select('id, status, player1_wallet, player2_wallet, player1_name, player2_name, player1_clicks, player2_clicks, game_started_at, game_ends_at, winner_wallet, stake_amount, created_at').order('created_at', { ascending: false }).limit(20)
         .then(function(r) {
           if (status) status.textContent = '';
           if (r.error) {
@@ -1912,9 +1945,11 @@
             var closeBtn = room.status === 'open' && p1 === me ? '<button type="button" class="pvp-close-room-btn mt-2 py-1 px-2 border border-neon-pink text-neon-pink rounded text-[9px] hover:bg-neon-pink/10" data-room-id="' + room.id + '">CLOSE ROOM</button>' : '';
             var base = (window.TON_CONFIG && window.TON_CONFIG.gameBaseUrl ? window.TON_CONFIG.gameBaseUrl : (window.location.origin + window.location.pathname)).replace(/\/?$/, '');
             var shareLink = base + '/play.html?room=' + room.id;
+            var stake = room.stake_amount != null ? parseInt(room.stake_amount, 10) : 5;
+            if (isNaN(stake) || stake < 1) stake = 5;
             var cardAction = isOpen && p1 !== me ? 'join' : (room.status === 'in_progress' && isMine ? 'enter-duel' : '');
-            return '<div class="pvp-room-card bg-pixel-panel border-2 border-gray-700 p-3 rounded text-left cursor-pointer hover:border-gray-500" data-room-id="' + room.id + '" data-room-action="' + cardAction + '">' +
-              '<div class="text-[10px] text-neon-pink">Room ' + shortId + (isMine ? ' (you)' : '') + '</div>' +
+            return '<div class="pvp-room-card bg-pixel-panel border-2 border-gray-700 p-3 rounded text-left cursor-pointer hover:border-gray-500" data-room-id="' + room.id + '" data-room-action="' + cardAction + '" data-room-stake="' + stake + '">' +
+              '<div class="text-[10px] text-neon-pink">Room ' + shortId + (isMine ? ' (you)' : '') + ' · ' + stake + ' tokens</div>' +
               '<div class="text-gray-500 text-[9px] mt-1">' + count + '/2 · ' + room.status + '</div>' +
               '<div class="mt-2 flex flex-wrap gap-2 items-center">' + joinBtn + enterDuelBtn + closeBtn +
               '<button type="button" class="pvp-copy-link-btn py-1 px-2 border border-gray-500 text-gray-400 rounded text-[9px] hover:bg-gray-700" data-room-id="' + room.id + '" data-room-url="' + shareLink + '">COPY LINK</button>' +
@@ -1963,6 +1998,16 @@
           list.innerHTML = '';
         });
     }
+    function getPvpCreateStake() {
+      var custom = document.getElementById('pvp-custom-stake');
+      if (custom && custom.value.trim() !== '') {
+        var n = parseInt(custom.value.trim(), 10);
+        if (!isNaN(n) && n >= 1 && n <= 999) return n;
+      }
+      var sel = document.querySelector('.pvp-stake-btn.border-neon-green');
+      if (sel && sel.getAttribute('data-stake')) return parseInt(sel.getAttribute('data-stake'), 10) || 5;
+      return PVP_DEFAULT_STAKE;
+    }
     function createPvpRoom() {
       var supabase = window.supabaseClient;
       var btn = document.getElementById('pvp-create-room-btn');
@@ -1970,11 +2015,14 @@
       if (!supabase) { if (errEl) { errEl.textContent = 'Supabase not configured.'; errEl.classList.remove('hidden'); } return; }
       var name = getPlayerName();
       if (!name) { showPvpOnboarding('name'); return; }
-      if (!window.TonWallet || !window.TonWallet.getAddress()) { showPvpOnboarding('wallet'); return; }
-      if (!hasWalletAndStake()) { showPvpOnboarding('card'); return; }
+      var stake = getPvpCreateStake();
+      if (!hasEnoughTokens(stake)) {
+        if (errEl) { errEl.textContent = 'You need at least ' + stake + ' in-game tokens to create this room. Earn tokens by tapping or claiming bounties.'; errEl.classList.remove('hidden'); }
+        return;
+      }
       if (btn) btn.disabled = true;
       var me = getPvpPlayerId();
-      supabase.from('rooms').insert({ status: 'open', player1_wallet: me, player1_name: name, stake_amount: PVP_STAKE }).select('id').single()
+      supabase.from('rooms').insert({ status: 'open', player1_wallet: me, player1_name: name, stake_amount: stake }).select('id').single()
         .then(function(r) {
           if (btn) btn.disabled = false;
           if (r.error) { if (errEl) { errEl.textContent = r.error.message || 'Failed to create room'; errEl.classList.remove('hidden'); } return; }
@@ -2011,13 +2059,17 @@
       if (!supabase || !roomId) return;
       var name = getPlayerName();
       if (!name) { showPvpOnboarding('name', roomId); return; }
-      if (!window.TonWallet || !window.TonWallet.getAddress()) { showPvpOnboarding('wallet', roomId); return; }
-      if (!hasWalletAndStake()) { showPvpOnboarding('card', roomId); return; }
       var me = getPvpPlayerId();
-      supabase.from('rooms').select('status, player1_wallet, player2_wallet').eq('id', roomId).single().then(function(check) {
+      supabase.from('rooms').select('status, player1_wallet, player2_wallet, stake_amount').eq('id', roomId).single().then(function(check) {
         if (check.error || !check.data) { if (errEl) { errEl.textContent = 'Room not found.'; errEl.classList.remove('hidden'); } return; }
         var room = check.data;
-        if (room.status !== 'open') { if (errEl) { errEl.textContent = 'Room is full or game already started. No other players can enter.'; errEl.classList.remove('hidden'); } return; }
+        var stake = room.stake_amount != null ? parseInt(room.stake_amount, 10) : 5;
+        if (isNaN(stake) || stake < 1) stake = 5;
+        if (!hasEnoughTokens(stake)) {
+          if (errEl) { errEl.textContent = 'You need at least ' + stake + ' in-game tokens to join this wager. Your balance: ' + getInGameTokenBalance() + '.'; errEl.classList.remove('hidden'); }
+          return;
+        }
+        if (room.status !== 'open') { if (errEl) { errEl.textContent = 'Room is full or game already started.'; errEl.classList.remove('hidden'); } return; }
         if (room.player2_wallet) { if (errEl) { errEl.textContent = 'Room is full. Only 2 players per game.'; errEl.classList.remove('hidden'); } return; }
         if (room.player1_wallet === me) { if (errEl) { errEl.textContent = 'You already created this room. Wait for opponent or close it.'; errEl.classList.remove('hidden'); } return; }
         doJoinPvpRoom(roomId, me, name, errEl);
@@ -2026,7 +2078,8 @@
     function doJoinPvpRoom(roomId, me, name, errEl) {
       var supabase = window.supabaseClient;
       var now = new Date();
-      var endsAt = new Date(now.getTime() + PVP_GAME_DURATION_SEC * 1000);
+      var totalSec = PVP_COUNTDOWN_SEC + PVP_GAME_DURATION_SEC;
+      var endsAt = new Date(now.getTime() + totalSec * 1000);
       supabase.from('rooms').update({
         player2_wallet: me,
         player2_name: name,
@@ -2053,6 +2106,12 @@
     var pvpDuelRealtimeUnsub = null;
     var pvpDuelPollId = null;
     var pvpDuelLastClickAt = 0;
+    // Play vs Computer (no Supabase)
+    var pvpVsBotMode = false;
+    var pvpBotClicks = 0;
+    var pvpMyClicksVsBot = 0;
+    var pvpBotIntervalId = null;
+    var pvpLastWasVsBot = false;
 
     function showDuelLobby() {
       document.getElementById('pvp-duel-view').classList.add('hidden');
@@ -2063,11 +2122,67 @@
       if (pvpDuelTimerId) { clearInterval(pvpDuelTimerId); pvpDuelTimerId = null; }
       if (pvpDuelRealtimeUnsub) { pvpDuelRealtimeUnsub(); pvpDuelRealtimeUnsub = null; }
       if (pvpDuelPollId) { clearInterval(pvpDuelPollId); pvpDuelPollId = null; }
+      if (pvpBotIntervalId) { clearInterval(pvpBotIntervalId); pvpBotIntervalId = null; }
       pvpDuelRoomId = null;
       pvpDuelMyRole = 0;
+      pvpVsBotMode = false;
+    }
+    function startVsComputer() {
+      pvpVsBotMode = true;
+      pvpDuelRoomId = null;
+      pvpDuelMyRole = 1;
+      pvpMyClicksVsBot = 0;
+      pvpBotClicks = 0;
+      var lobbyWrap = document.getElementById('pvp-lobby-wrap');
+      if (lobbyWrap) lobbyWrap.style.display = 'none';
+      document.getElementById('pvp-duel-view').classList.remove('hidden');
+      document.getElementById('pvp-duel-result').classList.add('hidden');
+      document.getElementById('pvp-duel-waiting').classList.add('hidden');
+      document.getElementById('pvp-duel-you-name').textContent = getPlayerName() || 'You';
+      document.getElementById('pvp-duel-opp-name').textContent = 'Computer';
+      document.getElementById('pvp-duel-you-clicks').textContent = '0';
+      document.getElementById('pvp-duel-opp-clicks').textContent = '0';
+      var endsAt = Date.now() + (PVP_COUNTDOWN_SEC + PVP_GAME_DURATION_SEC) * 1000;
+      startDuelTimer(endsAt);
+      if (pvpBotIntervalId) clearInterval(pvpBotIntervalId);
+      if (window._pvpBotStartTimeout) clearTimeout(window._pvpBotStartTimeout);
+      window._pvpBotStartTimeout = setTimeout(function() {
+        window._pvpBotStartTimeout = null;
+        if (!pvpVsBotMode) return;
+        pvpBotIntervalId = setInterval(function() {
+          if (!pvpVsBotMode) { clearInterval(pvpBotIntervalId); pvpBotIntervalId = null; return; }
+          pvpBotClicks += 1;
+          var el = document.getElementById('pvp-duel-opp-clicks');
+          if (el) el.textContent = String(pvpBotClicks);
+        }, 280 + Math.random() * 120);
+      }, PVP_COUNTDOWN_SEC * 1000);
+    }
+    function endVsComputerGame() {
+      if (!pvpVsBotMode) return;
+      if (pvpBotIntervalId) { clearInterval(pvpBotIntervalId); pvpBotIntervalId = null; }
+      pvpVsBotMode = false;
+      var winner = pvpMyClicksVsBot > pvpBotClicks ? 'me' : (pvpBotClicks > pvpMyClicksVsBot ? 'bot' : null);
+      document.getElementById('pvp-duel-view').classList.add('hidden');
+      var resultEl = document.getElementById('pvp-duel-result');
+      resultEl.classList.remove('hidden');
+      pvpLastWasVsBot = true;
+      if (winner === 'me') {
+        document.getElementById('pvp-duel-result-title').textContent = 'YOU WIN!';
+        document.getElementById('pvp-duel-result-title').className = 'text-lg font-bold mb-2 neon-text-green';
+        document.getElementById('pvp-duel-result-detail').textContent = 'You beat the computer! Practice wins don\'t count on the leaderboard. Play vs a friend for real.';
+      } else if (winner === 'bot') {
+        document.getElementById('pvp-duel-result-title').textContent = 'COMPUTER WINS';
+        document.getElementById('pvp-duel-result-title').className = 'text-lg font-bold mb-2 neon-text-pink';
+        document.getElementById('pvp-duel-result-detail').textContent = 'The computer had more taps. Try again or invite a friend to duel!';
+      } else {
+        document.getElementById('pvp-duel-result-title').textContent = 'DRAW';
+        document.getElementById('pvp-duel-result-title').className = 'text-lg font-bold mb-2 text-gray-400';
+        document.getElementById('pvp-duel-result-detail').textContent = 'Tie! No winner.';
+      }
     }
     function enterDuel(roomId) {
       pvpDuelRoomId = roomId;
+      pvpVsBotMode = false;
       var lobbyWrap = document.getElementById('pvp-lobby-wrap');
       if (lobbyWrap) lobbyWrap.style.display = 'none';
       document.getElementById('pvp-duel-view').classList.remove('hidden');
@@ -2107,16 +2222,32 @@
     }
     function startDuelTimer(endsAtMs) {
       if (pvpDuelTimerId) clearInterval(pvpDuelTimerId);
+      var countdownEndMs = endsAtMs - PVP_GAME_DURATION_SEC * 1000;
+      var clickBtn = document.getElementById('pvp-duel-click-btn');
+      if (clickBtn) clickBtn.disabled = true;
       function tick() {
         var now = Date.now();
         if (endsAtMs <= 0) return;
+        if (now < countdownEndMs) {
+          var countdownLeft = Math.ceil((countdownEndMs - now) / 1000);
+          var el = document.getElementById('pvp-duel-timer');
+          if (el) {
+            if (countdownLeft >= 4) el.textContent = '3';
+            else if (countdownLeft === 3) el.textContent = '2';
+            else if (countdownLeft === 2) el.textContent = '1';
+            else if (countdownLeft === 1) el.textContent = 'GO!';
+            else el.textContent = 'GO!';
+          }
+          return;
+        }
+        if (clickBtn && clickBtn.disabled) clickBtn.disabled = false;
         var left = Math.max(0, Math.ceil((endsAtMs - now) / 1000));
         var el = document.getElementById('pvp-duel-timer');
         if (el) el.textContent = '0:' + (left < 10 ? '0' : '') + left;
         if (left <= 0) {
           clearInterval(pvpDuelTimerId);
           pvpDuelTimerId = null;
-          endDuelGame();
+          if (pvpVsBotMode) endVsComputerGame(); else endDuelGame();
         }
       }
       tick();
@@ -2142,6 +2273,7 @@
       pvpDuelRealtimeUnsub = function() { supabase.removeChannel(channel); };
     }
     function endDuelGame() {
+      if (pvpVsBotMode) { endVsComputerGame(); return; }
       if (!pvpDuelRoomId) return;
       var supabase = window.supabaseClient;
       supabase.from('rooms').select('*').eq('id', pvpDuelRoomId).single().then(function(r) {
@@ -2159,12 +2291,14 @@
       });
     }
     function endDuelEarly() {
+      if (pvpVsBotMode) { endVsComputerGame(); return; }
       if (!pvpDuelRoomId) return;
       if (pvpDuelTimerId) { clearInterval(pvpDuelTimerId); pvpDuelTimerId = null; }
       if (pvpDuelPollId) { clearInterval(pvpDuelPollId); pvpDuelPollId = null; }
       endDuelGame();
     }
     function showDuelResult(room) {
+      pvpLastWasVsBot = false;
       if (pvpDuelRealtimeUnsub) { pvpDuelRealtimeUnsub(); pvpDuelRealtimeUnsub = null; }
       document.getElementById('pvp-duel-view').classList.add('hidden');
       var resultEl = document.getElementById('pvp-duel-result');
@@ -2172,18 +2306,26 @@
       var me = getPvpPlayerId();
       var winnerWallet = room.winner_wallet;
       var winName = room.player1_wallet === winnerWallet ? room.player1_name : (room.player2_name || 'Winner');
+      var stake = room.stake_amount != null ? parseInt(room.stake_amount, 10) : 5;
+      if (isNaN(stake) || stake < 1) stake = 5;
       if (winnerWallet === me) {
+        if (typeof addTokens === 'function') addTokens(stake);
         document.getElementById('pvp-duel-result-title').textContent = 'YOU WIN!';
         document.getElementById('pvp-duel-result-title').className = 'text-lg font-bold mb-2 neon-text-green';
-        document.getElementById('pvp-duel-result-detail').textContent = 'You\'re on the leaderboard. Loser loses 1 $CARD (transfer can be added later).';
+        document.getElementById('pvp-duel-result-detail').textContent = 'You won ' + stake + ' tokens. You\'re on the leaderboard.';
       } else if (winnerWallet) {
+        if (typeof tokens !== 'undefined') {
+          tokens = Math.max(0, (tokens || 0) - stake);
+          if (typeof save === 'function') save();
+          if (typeof updateUI === 'function') updateUI();
+        }
         document.getElementById('pvp-duel-result-title').textContent = 'YOU LOSE';
         document.getElementById('pvp-duel-result-title').className = 'text-lg font-bold mb-2 neon-text-pink';
-        document.getElementById('pvp-duel-result-detail').textContent = winName + ' won. You lose your 1 $CARD stake.';
+        document.getElementById('pvp-duel-result-detail').textContent = winName + ' won. You lost ' + stake + ' tokens.';
       } else {
         document.getElementById('pvp-duel-result-title').textContent = 'DRAW';
         document.getElementById('pvp-duel-result-title').className = 'text-lg font-bold mb-2 text-gray-400';
-        document.getElementById('pvp-duel-result-detail').textContent = 'Tie! No winner.';
+        document.getElementById('pvp-duel-result-detail').textContent = 'Tie! No token transfer.';
       }
     }
     function upsertLeaderboardWin(wallet, name) {
@@ -2200,6 +2342,15 @@
       });
     }
     document.getElementById('pvp-duel-click-btn') && document.getElementById('pvp-duel-click-btn').addEventListener('click', function() {
+      if (pvpVsBotMode) {
+        var now = Date.now();
+        if (now - pvpDuelLastClickAt < PVP_CLICK_COOLDOWN_MS) return;
+        pvpDuelLastClickAt = now;
+        pvpMyClicksVsBot += 1;
+        var el = document.getElementById('pvp-duel-you-clicks');
+        if (el) el.textContent = String(pvpMyClicksVsBot);
+        return;
+      }
       if (!pvpDuelRoomId || !pvpDuelMyRole) return;
       var now = Date.now();
       if (now - pvpDuelLastClickAt < PVP_CLICK_COOLDOWN_MS) return;
@@ -2214,6 +2365,11 @@
       endDuelEarly();
     });
     document.getElementById('pvp-duel-rematch-btn') && document.getElementById('pvp-duel-rematch-btn').addEventListener('click', function() {
+      if (pvpLastWasVsBot) {
+        showDuelLobby();
+        startVsComputer();
+        return;
+      }
       showDuelLobby();
       if (typeof loadPvpRooms === 'function') loadPvpRooms();
       createPvpRoom();
@@ -2234,7 +2390,8 @@
         if (room.status !== 'in_progress' || room.player1_wallet !== me) return;
         if (!room.game_ends_at) {
           var now = new Date();
-          var endsAt = new Date(now.getTime() + PVP_GAME_DURATION_SEC * 1000);
+          var totalSec = PVP_COUNTDOWN_SEC + PVP_GAME_DURATION_SEC;
+          var endsAt = new Date(now.getTime() + totalSec * 1000);
           supabase.from('rooms').update({ game_started_at: now.toISOString(), game_ends_at: endsAt.toISOString(), updated_at: now.toISOString() }).eq('id', roomId).then(function() { enterDuel(roomId); });
         } else {
           enterDuel(roomId);
@@ -2243,10 +2400,31 @@
     }
     window.enterDuel = enterDuel;
     window.checkMyRoomStarted = checkMyRoomStarted;
+    window.startVsComputer = startVsComputer;
     var pvpCreateBtn = document.getElementById('pvp-create-room-btn');
     var pvpRefreshBtn = document.getElementById('pvp-refresh-btn');
     if (pvpCreateBtn) pvpCreateBtn.addEventListener('click', createPvpRoom);
     if (pvpRefreshBtn) pvpRefreshBtn.addEventListener('click', function() { loadPvpRooms(); });
+    document.querySelectorAll('.pvp-stake-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.pvp-stake-btn').forEach(function(b) {
+          b.classList.remove('border-neon-green', 'text-neon-green', 'bg-neon-green/10');
+          b.classList.add('border-gray-600', 'text-gray-400');
+        });
+        this.classList.add('border-neon-green', 'text-neon-green', 'bg-neon-green/10');
+        this.classList.remove('border-gray-600', 'text-gray-400');
+        var custom = document.getElementById('pvp-custom-stake');
+        if (custom) custom.value = '';
+      });
+    });
+    document.getElementById('pvp-vs-computer-btn') && document.getElementById('pvp-vs-computer-btn').addEventListener('click', function() {
+      var name = getPlayerName();
+      if (!name) {
+        var n = prompt('Enter your name to play vs computer (practice):', 'Player');
+        if (n && n.trim()) setPlayerName(n.trim().slice(0, 20));
+      }
+      startVsComputer();
+    });
     document.getElementById('pvp-invited-join-btn') && document.getElementById('pvp-invited-join-btn').addEventListener('click', function() {
       var roomId = window._pvpInvitedRoomId || new URLSearchParams(window.location.search).get('room');
       if (roomId) joinPvpRoom(roomId);
@@ -2281,6 +2459,12 @@
         if (typeof window.loadPvpRooms === 'function') window.loadPvpRooms();
         var invitedCard = document.getElementById('pvp-invited-card');
         if (invitedCard) invitedCard.classList.add('hidden');
+        try {
+          if (sessionStorage.getItem('tokenClicker_startVsComputer') === '1') {
+            sessionStorage.removeItem('tokenClicker_startVsComputer');
+            setTimeout(function() { if (typeof window.startVsComputer === 'function') window.startVsComputer(); }, 100);
+          }
+        } catch (e) {}
       }
     }
     window.addEventListener('hashchange', () => showPage(getPageFromHash()));
