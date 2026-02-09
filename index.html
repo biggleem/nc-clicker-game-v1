@@ -60,8 +60,8 @@
     /* Bottom nav: hide scrollbar but keep scroll on small devices */
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
-    /* Bottom nav: center and fit on small screens */
-    .bottom-nav-inner { display: flex; flex-wrap: nowrap; justify-content: center; align-items: center; gap: 2px; padding: 6px 8px; min-height: 44px; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; }
+    /* Bottom nav: left-aligned, scroll on small screens */
+    .bottom-nav-inner { display: flex; flex-wrap: nowrap; justify-content: flex-start; align-items: center; gap: 2px; padding: 6px 8px; min-height: 44px; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; }
     .bottom-nav-inner::-webkit-scrollbar { display: none; }
     @media (min-width: 400px) { .bottom-nav-inner { gap: 4px; padding: 8px 10px; } }
     .bottom-nav-link { flex-shrink: 0; padding: 6px 8px; font-size: 8px; border-radius: 6px; white-space: nowrap; }
@@ -82,6 +82,8 @@
     .page.active { display: block; }
     .nft-clicker { transition: transform 0.05s; box-shadow: 0 0 20px rgba(0,255,247,0.2), 0 0 40px rgba(255,0,170,0.1); }
     .nft-clicker:hover:not(.cooldown) { box-shadow: 0 0 25px rgba(0,255,247,0.35), 0 0 50px rgba(255,0,170,0.2); }
+    .pvp-duel-tap-pulse { animation: pvpTapPulse 0.12s ease-out; }
+    @keyframes pvpTapPulse { 0% { transform: scale(1); } 40% { transform: scale(0.9); } 100% { transform: scale(1); } }
     .nft-clicker:active { transform: scale(0.97); }
     .nft-clicker.cooldown { opacity: 0.7; pointer-events: none; }
     .image-pixel { image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges; }
@@ -751,10 +753,11 @@
         </div>
       </div>
 
-      <!-- Duel result: winner / loser + rematch -->
+      <!-- Duel result: winner / loser + 60s rematch window -->
       <div id="pvp-duel-result" class="hidden mt-4 p-4 rounded-lg border-2 text-center">
         <p id="pvp-duel-result-title" class="text-lg font-bold mb-2">—</p>
-        <p id="pvp-duel-result-detail" class="text-[10px] text-gray-400 mb-4">—</p>
+        <p id="pvp-duel-result-detail" class="text-[10px] text-gray-400 mb-2">—</p>
+        <p id="pvp-duel-rematch-countdown" class="text-[9px] text-neon-cyan mb-2 hidden">Rematch — 60s</p>
         <div class="flex gap-2 justify-center flex-wrap">
           <button type="button" id="pvp-duel-rematch-btn" class="py-2 px-4 border-2 border-neon-green text-neon-green rounded text-[10px] hover:bg-neon-green/10">REMATCH</button>
           <button type="button" id="pvp-duel-lobby-btn" class="py-2 px-4 border-2 border-gray-500 text-gray-400 rounded text-[10px] hover:bg-gray-700">BACK TO LOBBY</button>
@@ -763,7 +766,7 @@
     </section>
   </main>
 
-  <!-- Bottom Nav: centered, responsive so full menu fits on screen -->
+  <!-- Bottom Nav: left-aligned, responsive so full menu fits on screen -->
   <nav class="fixed bottom-0 left-0 right-0 z-50 bg-black/95 border-t-2 border-pixel-border max-w-lg mx-auto">
     <div class="bottom-nav-inner">
       <a href="#home" class="nav-link bottom-nav-link" data-page="home">HOME</a>
@@ -1108,7 +1111,7 @@
       var list = document.getElementById('leaderboard-pvp-list');
       if (!list) return;
       if (!supabase) {
-        list.innerHTML = '<li class="text-gray-500">No duel wins yet.</li>';
+        list.innerHTML = '<li class="text-gray-500">Leaderboard unavailable. Add Supabase in supabase-config.js.</li>';
         return;
       }
       list.innerHTML = '<li class="text-gray-500">Loading…</li>';
@@ -1187,33 +1190,34 @@
       return earned;
     }
 
+    function spawnFeathersAt(cx, cy) {
+      for (var i = 0; i < 3; i++) {
+        var el = document.createElement('div');
+        el.className = 'feather-fall feather-sway' + (1 + (i % 3));
+        el.style.left = (cx + (Math.random() - 0.5) * 20) + 'px';
+        el.style.top = cy + 'px';
+        el.style.marginLeft = '-26px';
+        el.style.marginTop = '-16px';
+        var img = document.createElement('img');
+        img.src = 'assets/cardinal-feather.png';
+        img.alt = '';
+        img.className = 'image-pixel';
+        img.style.width = '52px';
+        img.style.height = 'auto';
+        img.style.display = 'block';
+        el.appendChild(img);
+        document.body.appendChild(el);
+        (function(featherEl) {
+          setTimeout(function() { if (featherEl.parentNode) featherEl.remove(); }, 1500);
+        })(el);
+      }
+    }
     function spawnClickEffects(earned, clickEvent) {
       var showFeathers = localStorage.getItem('tokenClicker_featherEffects') !== '0';
       var cx = clickEvent && typeof clickEvent.clientX === 'number' ? clickEvent.clientX : (nftClicker && nftClicker.getBoundingClientRect().left + nftClicker.getBoundingClientRect().width / 2);
       var cy = clickEvent && typeof clickEvent.clientY === 'number' ? clickEvent.clientY : (nftClicker && nftClicker.getBoundingClientRect().top + nftClicker.getBoundingClientRect().height / 2);
 
-      if (showFeathers) {
-        for (var i = 0; i < 3; i++) {
-          var el = document.createElement('div');
-          el.className = 'feather-fall feather-sway' + (1 + (i % 3));
-          el.style.left = (cx + (Math.random() - 0.5) * 20) + 'px';
-          el.style.top = cy + 'px';
-          el.style.marginLeft = '-26px';
-          el.style.marginTop = '-16px';
-          var img = document.createElement('img');
-          img.src = 'assets/cardinal-feather.png';
-          img.alt = '';
-          img.className = 'image-pixel';
-          img.style.width = '52px';
-          img.style.height = 'auto';
-          img.style.display = 'block';
-          el.appendChild(img);
-          document.body.appendChild(el);
-          (function(featherEl) {
-            setTimeout(function() { if (featherEl.parentNode) featherEl.remove(); }, 1500);
-          })(el);
-        }
-      }
+      if (showFeathers) spawnFeathersAt(cx, cy);
 
       var valueEl = document.createElement('div');
       valueEl.className = 'tap-value-float';
@@ -1717,7 +1721,11 @@
     function loadFriendsInvited() {
       var supabase = window.supabaseClient;
       var list = document.getElementById('friends-invited-list');
-      if (!supabase || !list) return;
+      if (!list) return;
+      if (!supabase) {
+        list.innerHTML = '<li class="text-gray-500">Friends unavailable. Add Supabase in supabase-config.js.</li>';
+        return;
+      }
       var refCode = localStorage.getItem('tokenClicker_refCode') || '';
       if (!refCode) { list.innerHTML = '<li class="text-gray-500">Your code not set yet.</li>'; return; }
       supabase.from('referrals').select('invited_name, invited_wallet, created_at').eq('inviter_ref_code', refCode).order('created_at', { ascending: false }).limit(50)
@@ -1824,7 +1832,7 @@
       if (!list) return;
       var me = typeof getPvpPlayerId === 'function' ? getPvpPlayerId() : null;
       if (!supabase) {
-        list.innerHTML = '<li class="text-gray-500">Cannot load (no connection).</li>';
+        list.innerHTML = '<li class="text-gray-500">Friends unavailable. Add Supabase in supabase-config.js.</li>';
         return;
       }
       if (!me) {
@@ -2099,8 +2107,8 @@
       if (errEl) errEl.classList.add('hidden');
       var supabase = window.supabaseClient;
       if (!supabase) {
-        if (status) status.textContent = 'Supabase not configured.';
-        list.innerHTML = '<p class="text-gray-500 text-[10px] p-3">Add Supabase URL and anon key in supabase-config.js and run the migration.</p>';
+        if (status) status.textContent = 'Rooms unavailable.';
+        list.innerHTML = '<p class="text-gray-500 text-[10px] p-3">Leaderboard &amp; rooms need Supabase. Add URL and anon key in supabase-config.js and run migrations.</p>';
         return;
       }
       if (status) status.textContent = 'Loading rooms…';
@@ -2108,7 +2116,7 @@
       var fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       supabase.from('rooms').update({ status: 'finished', updated_at: nowIso }).eq('status', 'open').lt('created_at', fiveMinAgo).then(function() {});
       supabase.from('rooms').update({ status: 'finished', updated_at: nowIso }).eq('status', 'in_progress').lt('game_ends_at', nowIso).then(function() {});
-      supabase.from('rooms').select('id, status, player1_wallet, player2_wallet, player1_name, player2_name, player1_clicks, player2_clicks, game_started_at, game_ends_at, winner_wallet, stake_amount, created_at').order('created_at', { ascending: false }).limit(50)
+      supabase.from('rooms').select('id, status, player1_wallet, player2_wallet, player1_name, player2_name, player1_clicks, player2_clicks, game_started_at, game_ends_at, winner_wallet, stake_amount, rematch_until, created_at').order('created_at', { ascending: false }).limit(50)
         .then(function(r) {
           if (status) status.textContent = '';
           if (r.error) {
@@ -2119,8 +2127,8 @@
           }
           var rooms = (r.data || []).filter(function(room) {
             if (room.status === 'open' || room.status === 'in_progress') return true;
-            var ageMs = Date.now() - new Date(room.created_at).getTime();
-            return ageMs < 30 * 60 * 1000;
+            if (room.status === 'finished' && room.rematch_until && new Date(room.rematch_until).getTime() > Date.now()) return true;
+            return false;
           });
           var order = { open: 0, in_progress: 1, finished: 2 };
           rooms.sort(function(a, b) {
@@ -2303,6 +2311,8 @@
     var pvpDuelRealtimeUnsub = null;
     var pvpDuelPollId = null;
     var pvpDuelLastClickAt = 0;
+    var pvpRematchCountdownId = null;
+    var pvpRematchChannelUnsub = null;
     // Play vs Computer (no Supabase)
     var pvpVsBotMode = false;
     var pvpBotClicks = 0;
@@ -2319,6 +2329,8 @@
       if (pvpDuelTimerId) { clearInterval(pvpDuelTimerId); pvpDuelTimerId = null; }
       if (pvpDuelRealtimeUnsub) { pvpDuelRealtimeUnsub(); pvpDuelRealtimeUnsub = null; }
       if (pvpDuelPollId) { clearInterval(pvpDuelPollId); pvpDuelPollId = null; }
+      if (pvpRematchCountdownId) { clearInterval(pvpRematchCountdownId); pvpRematchCountdownId = null; }
+      if (pvpRematchChannelUnsub) { pvpRematchChannelUnsub(); pvpRematchChannelUnsub = null; }
       if (pvpBotIntervalId) { clearInterval(pvpBotIntervalId); pvpBotIntervalId = null; }
       pvpDuelRoomId = null;
       pvpDuelMyRole = 0;
@@ -2479,9 +2491,11 @@
         if (room.status === 'finished') { showDuelResult(room); return; }
         var c1 = room.player1_clicks || 0, c2 = room.player2_clicks || 0;
         var winner = c1 > c2 ? room.player1_wallet : (c2 > c1 ? room.player2_wallet : null);
-        supabase.from('rooms').update({ status: 'finished', winner_wallet: winner, updated_at: new Date().toISOString() }).eq('id', pvpDuelRoomId).then(function() {
+        var rematchUntil = new Date(Date.now() + 60 * 1000).toISOString();
+        supabase.from('rooms').update({ status: 'finished', winner_wallet: winner, updated_at: new Date().toISOString(), rematch_until: rematchUntil }).eq('id', pvpDuelRoomId).then(function() {
           room.status = 'finished';
           room.winner_wallet = winner;
+          room.rematch_until = rematchUntil;
           showDuelResult(room);
           if (winner) upsertLeaderboardWin(winner, room.player1_wallet === winner ? room.player1_name : room.player2_name);
         });
@@ -2497,6 +2511,8 @@
     function showDuelResult(room) {
       pvpLastWasVsBot = false;
       if (pvpDuelRealtimeUnsub) { pvpDuelRealtimeUnsub(); pvpDuelRealtimeUnsub = null; }
+      if (pvpRematchCountdownId) { clearInterval(pvpRematchCountdownId); pvpRematchCountdownId = null; }
+      if (pvpRematchChannelUnsub) { pvpRematchChannelUnsub(); pvpRematchChannelUnsub = null; }
       document.getElementById('pvp-duel-view').classList.add('hidden');
       var resultEl = document.getElementById('pvp-duel-result');
       resultEl.classList.remove('hidden');
@@ -2524,6 +2540,35 @@
         document.getElementById('pvp-duel-result-title').className = 'text-lg font-bold mb-2 text-gray-400';
         document.getElementById('pvp-duel-result-detail').textContent = 'Tie! No token transfer.';
       }
+      var rematchCountEl = document.getElementById('pvp-duel-rematch-countdown');
+      var rematchBtn = document.getElementById('pvp-duel-rematch-btn');
+      var roomId = pvpDuelRoomId;
+      var rematchUntil = room.rematch_until ? new Date(room.rematch_until).getTime() : 0;
+      if (roomId && rematchUntil > Date.now() && window.supabaseClient) {
+        rematchCountEl.classList.remove('hidden');
+        function updateRematchCountdown() {
+          var left = Math.max(0, Math.ceil((rematchUntil - Date.now()) / 1000));
+          rematchCountEl.textContent = left > 0 ? 'Rematch — ' + left + 's (same stake, no extra cost)' : 'Room closed. No rematch in time.';
+          if (left <= 0) {
+            if (pvpRematchCountdownId) { clearInterval(pvpRematchCountdownId); pvpRematchCountdownId = null; }
+            if (rematchBtn) rematchBtn.disabled = true;
+            if (pvpRematchChannelUnsub) { pvpRematchChannelUnsub(); pvpRematchChannelUnsub = null; }
+          }
+        }
+        updateRematchCountdown();
+        pvpRematchCountdownId = setInterval(updateRematchCountdown, 1000);
+        var channel = window.supabaseClient.channel('rematch-' + roomId).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'id=eq.' + roomId }, function(payload) {
+          var r = payload.new;
+          if (r && r.status === 'in_progress' && r.game_ends_at && new Date(r.game_ends_at).getTime() > Date.now()) {
+            if (pvpRematchCountdownId) { clearInterval(pvpRematchCountdownId); pvpRematchCountdownId = null; }
+            if (pvpRematchChannelUnsub) { pvpRematchChannelUnsub(); pvpRematchChannelUnsub = null; }
+            enterDuel(roomId);
+          }
+        }).subscribe();
+        pvpRematchChannelUnsub = function() { window.supabaseClient.removeChannel(channel); };
+      } else {
+        rematchCountEl.classList.add('hidden');
+      }
     }
     function upsertLeaderboardWin(wallet, name) {
       var supabase = window.supabaseClient;
@@ -2538,7 +2583,18 @@
         }
       });
     }
-    document.getElementById('pvp-duel-click-btn') && document.getElementById('pvp-duel-click-btn').addEventListener('click', function() {
+    document.getElementById('pvp-duel-click-btn') && document.getElementById('pvp-duel-click-btn').addEventListener('click', function(e) {
+      var clickBtn = document.getElementById('pvp-duel-click-btn');
+      if (clickBtn) {
+        clickBtn.classList.remove('pvp-duel-tap-pulse');
+        clickBtn.offsetHeight;
+        clickBtn.classList.add('pvp-duel-tap-pulse');
+        setTimeout(function() { if (clickBtn) clickBtn.classList.remove('pvp-duel-tap-pulse'); }, 120);
+        if (localStorage.getItem('tokenClicker_featherEffects') !== '0') {
+          var rect = clickBtn.getBoundingClientRect();
+          spawnFeathersAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        }
+      }
       if (pvpVsBotMode) {
         var now = Date.now();
         if (now - pvpDuelLastClickAt < PVP_CLICK_COOLDOWN_MS) return;
@@ -2567,9 +2623,38 @@
         startVsComputer();
         return;
       }
-      showDuelLobby();
-      if (typeof loadPvpRooms === 'function') loadPvpRooms();
-      createPvpRoom();
+      if (!pvpDuelRoomId || !pvpDuelMyRole) { showDuelLobby(); if (typeof loadPvpRooms === 'function') loadPvpRooms(); return; }
+      var supabase = window.supabaseClient;
+      if (!supabase) { showDuelLobby(); if (typeof loadPvpRooms === 'function') loadPvpRooms(); return; }
+      var me = getPvpPlayerId();
+      var col = pvpDuelMyRole === 1 ? 'player1_wants_rematch' : 'player2_wants_rematch';
+      supabase.from('rooms').update({ [col]: true, updated_at: new Date().toISOString() }).eq('id', pvpDuelRoomId).then(function() {
+        supabase.from('rooms').select('player1_wants_rematch, player2_wants_rematch, rematch_until').eq('id', pvpDuelRoomId).single().then(function(r) {
+          if (r.error || !r.data) return;
+          var room = r.data;
+          var until = room.rematch_until ? new Date(room.rematch_until).getTime() : 0;
+          if (until <= Date.now()) return;
+          if (room.player1_wants_rematch && room.player2_wants_rematch) {
+            var now = new Date();
+            var totalSec = (typeof PVP_COUNTDOWN_SEC !== 'undefined' ? PVP_COUNTDOWN_SEC : 3) + (typeof PVP_GAME_DURATION_SEC !== 'undefined' ? PVP_GAME_DURATION_SEC : 30);
+            var endsAt = new Date(now.getTime() + totalSec * 1000);
+            supabase.from('rooms').update({
+              status: 'in_progress',
+              winner_wallet: null,
+              player1_clicks: 0,
+              player2_clicks: 0,
+              game_started_at: now.toISOString(),
+              game_ends_at: endsAt.toISOString(),
+              player1_wants_rematch: false,
+              player2_wants_rematch: false,
+              rematch_until: null,
+              updated_at: now.toISOString()
+            }).eq('id', pvpDuelRoomId).then(function() {
+              enterDuel(pvpDuelRoomId);
+            });
+          }
+        });
+      });
     });
     document.getElementById('pvp-duel-lobby-btn') && document.getElementById('pvp-duel-lobby-btn').addEventListener('click', function() {
       showDuelLobby();
