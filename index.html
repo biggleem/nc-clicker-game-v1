@@ -1739,11 +1739,70 @@
           }
           list.innerHTML = r.data.map(function(e, i) {
             var name = e.invited_name || 'Player';
-            var wallet = e.invited_wallet ? (e.invited_wallet.slice(0, 6) + '…') : '';
-            return (i + 1) + '. ' + name + (wallet ? ' (' + wallet + ')' : '');
-          }).join('\n');
+            var wallet = (e.invited_wallet || '').trim();
+            var walletShort = wallet ? (wallet.slice(0, 6) + '…') : '';
+            var nameEsc = (name || '').replace(/"/g, '&quot;');
+            var walletEsc = (wallet || '').replace(/"/g, '&quot;');
+            return '<li class="flex flex-wrap items-center gap-2 py-1 border-b border-gray-700/50 last:border-0">' +
+              '<span class="flex-1 min-w-0">' + (i + 1) + '. ' + name + (walletShort ? ' (' + walletShort + ')' : '') + '</span>' +
+              '<span class="flex gap-1 shrink-0">' +
+              '<button type="button" class="invited-duel-btn py-1 px-2 border border-neon-green text-neon-green rounded text-[9px] hover:bg-neon-green/10" data-name="' + nameEsc + '" data-wallet="' + walletEsc + '">DUEL</button>' +
+              '<button type="button" class="invited-remove-btn py-1 px-2 border border-neon-pink text-neon-pink rounded text-[9px] hover:bg-neon-pink/10" data-name="' + nameEsc + '" data-wallet="' + walletEsc + '">REMOVE</button>' +
+              '</span></li>';
+          }).join('');
+          var refCode = localStorage.getItem('tokenClicker_refCode') || '';
+          list.querySelectorAll('.invited-remove-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              var name = btn.getAttribute('data-name') || 'this friend';
+              if (!confirm('Do you want to remove ' + name + '?')) return;
+              var wallet = btn.getAttribute('data-wallet') || '';
+              supabase.from('referrals').delete().eq('inviter_ref_code', refCode).eq('invited_wallet', wallet).then(function(res) {
+                if (res.error) return;
+                if (typeof loadFriendsInvited === 'function') loadFriendsInvited();
+              });
+            });
+          });
+          list.querySelectorAll('.invited-duel-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              var name = btn.getAttribute('data-name') || 'Friend';
+              startDuelWithFriend(name);
+            });
+          });
         })
         .catch(function() { list.innerHTML = '<li class="text-gray-500">Could not load.</li>'; });
+    }
+    function startDuelWithFriend(friendName) {
+      var supabase = window.supabaseClient;
+      var name = getPlayerName();
+      if (!name) { window.location.hash = 'wallet'; showPage('wallet'); return; }
+      var stake = typeof getPvpCreateStake === 'function' ? getPvpCreateStake() : 5;
+      if (typeof hasEnoughTokens === 'function' && !hasEnoughTokens(stake)) {
+        window.location.hash = 'multiplayer'; showPage('multiplayer');
+        var errEl = document.getElementById('pvp-error');
+        if (errEl) { errEl.textContent = 'You need at least ' + stake + ' tokens. Earn tokens by tapping or in Wallet.'; errEl.classList.remove('hidden'); }
+        return;
+      }
+      var me = getPvpPlayerId();
+      if (!supabase || !me) { window.location.hash = 'multiplayer'; showPage('multiplayer'); return; }
+      supabase.from('rooms').insert({ status: 'open', player1_wallet: me, player1_name: name, stake_amount: stake }).select('id').single()
+        .then(function(r) {
+          if (r.error) { window.location.hash = 'multiplayer'; showPage('multiplayer'); return; }
+          var roomId = r.data.id;
+          var url = (typeof getShareBaseUrl === 'function' ? getShareBaseUrl() : (window.location.origin + window.location.pathname)) + '/?room=' + roomId;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(function() {
+              window.location.hash = 'multiplayer';
+              showPage('multiplayer');
+              if (typeof loadPvpRooms === 'function') loadPvpRooms();
+              alert('Room created! Link copied. Send it to ' + friendName + ' so they can join the duel.');
+            }).catch(function() { window.location.hash = 'multiplayer'; showPage('multiplayer'); if (typeof loadPvpRooms === 'function') loadPvpRooms(); });
+          } else {
+            window.location.hash = 'multiplayer';
+            showPage('multiplayer');
+            if (typeof loadPvpRooms === 'function') loadPvpRooms();
+            alert('Room created! Share this link with ' + friendName + ': ' + url);
+          }
+        });
     }
     function loadFriendsAddedByCode() {
       var supabase = window.supabaseClient;
@@ -1766,8 +1825,33 @@
             return;
           }
           list.innerHTML = r.data.map(function(e, i) {
-            return (i + 1) + '. ' + (e.friend_name || e.friend_ref_code || 'Friend');
-          }).join('\n');
+            var name = (e.friend_name || e.friend_ref_code || 'Friend').replace(/"/g, '&quot;');
+            var code = (e.friend_ref_code || '').replace(/"/g, '&quot;');
+            return '<li class="flex flex-wrap items-center gap-2 py-1 border-b border-gray-700/50 last:border-0">' +
+              '<span class="flex-1 min-w-0">' + (i + 1) + '. ' + (e.friend_name || e.friend_ref_code || 'Friend') + '</span>' +
+              '<span class="flex gap-1 shrink-0">' +
+              '<button type="button" class="friend-duel-btn py-1 px-2 border border-neon-green text-neon-green rounded text-[9px] hover:bg-neon-green/10" data-name="' + name + '" data-ref="' + code + '">DUEL</button>' +
+              '<button type="button" class="friend-remove-btn py-1 px-2 border border-neon-pink text-neon-pink rounded text-[9px] hover:bg-neon-pink/10" data-name="' + name + '" data-ref="' + code + '">REMOVE</button>' +
+              '</span></li>';
+          }).join('');
+          list.querySelectorAll('.friend-remove-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              var name = btn.getAttribute('data-name') || 'this friend';
+              if (!confirm('Do you want to remove ' + name + '?')) return;
+              var ref = btn.getAttribute('data-ref') || '';
+              if (!ref) return;
+              supabase.from('friends_by_code').delete().eq('user_wallet', me).eq('friend_ref_code', ref).then(function(res) {
+                if (res.error) return;
+                if (typeof loadFriendsAddedByCode === 'function') loadFriendsAddedByCode();
+              });
+            });
+          });
+          list.querySelectorAll('.friend-duel-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              var name = btn.getAttribute('data-name') || 'Friend';
+              startDuelWithFriend(name);
+            });
+          });
         })
         .catch(function() { list.innerHTML = '<li class="text-gray-500">Could not load.</li>'; });
     }
@@ -1791,18 +1875,13 @@
         return;
       }
       if (feedback) feedback.classList.add('hidden');
-      supabase.from('leaderboard').select('name, ref_code').not('ref_code', 'is', null).limit(100).then(function(r) {
-        if (r.error || !r.data || !r.data.length) {
-          if (feedback) { feedback.textContent = 'Unknown invite code. Ask your friend for their code.'; feedback.classList.remove('hidden'); feedback.classList.remove('text-neon-green'); feedback.classList.add('text-neon-yellow'); }
+      var refCodePattern = code.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+      supabase.from('leaderboard').select('name').ilike('ref_code', refCodePattern).limit(1).maybeSingle().then(function(r) {
+        if (r.error || !r.data || !r.data.name) {
+          if (feedback) { feedback.textContent = 'Unknown invite code. Your friend should open the app, go to Wallet → Settings, and SAVE their name so their code is synced.'; feedback.classList.remove('hidden'); feedback.classList.remove('text-neon-green'); feedback.classList.add('text-neon-yellow'); }
           return;
         }
-        var codeUpper = code.toUpperCase();
-        var row = r.data.find(function(x) { return (x.ref_code || '').toUpperCase() === codeUpper; });
-        if (!row) {
-          if (feedback) { feedback.textContent = 'Unknown invite code. Ask your friend for their code.'; feedback.classList.remove('hidden'); feedback.classList.remove('text-neon-green'); feedback.classList.add('text-neon-yellow'); }
-          return;
-        }
-        var friendName = (row.name || '').trim() || code;
+        var friendName = (r.data.name || '').trim() || code;
         supabase.from('friends_by_code').insert({ user_wallet: me, friend_ref_code: code, friend_name: friendName }).then(function(ins) {
           if (ins.error) {
             if (feedback) { feedback.textContent = (ins.error.code === '23505' ? 'Already in your list.' : (ins.error.message || 'Could not add.')); feedback.classList.remove('hidden'); feedback.classList.add('text-neon-yellow'); }
