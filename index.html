@@ -61,7 +61,8 @@
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     /* Bottom nav: center and fit on small screens */
-    .bottom-nav-inner { display: flex; flex-wrap: nowrap; justify-content: center; align-items: center; gap: 2px; padding: 6px 8px; min-height: 44px; }
+    .bottom-nav-inner { display: flex; flex-wrap: nowrap; justify-content: center; align-items: center; gap: 2px; padding: 6px 8px; min-height: 44px; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; }
+    .bottom-nav-inner::-webkit-scrollbar { display: none; }
     @media (min-width: 400px) { .bottom-nav-inner { gap: 4px; padding: 8px 10px; } }
     .bottom-nav-link { flex-shrink: 0; padding: 6px 8px; font-size: 8px; border-radius: 6px; white-space: nowrap; }
     @media (min-width: 360px) { .bottom-nav-link { padding: 6px 10px; font-size: 9px; } }
