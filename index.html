@@ -465,10 +465,15 @@
         <div class="text-gray-500 home-center-text mb-2">🏆 BADGES</div>
         <div class="flex justify-center gap-2 flex-wrap">
           <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel" id="badge-1" title="First Click">👆</div>
-          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-2" title="7-Day Streak">🔥</div>
-          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-3" title="30-Day Streak">💎</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-2" title="100 Clicks">⭐</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-3" title="500 Clicks">🌟</div>
           <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-4" title="1K Clicks">🎯</div>
-          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-5" title="10K Clicks">🚀</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-5" title="5K Clicks">💫</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-6" title="10K Clicks">🚀</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-7" title="25K Clicks">👑</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-8" title="7-Day Streak">🔥</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-9" title="First PVP Win">🏆</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-10" title="First Friend">👥</div>
         </div>
       </div>
       <!-- Upgrade strip (match reference) -->
@@ -495,6 +500,22 @@
     <section id="page-boosts" class="page p-4">
       <h2 class="text-neon-cyan mb-4 border-b-2 border-gray-700 pb-2">BOOSTS</h2>
       <p class="text-gray-400 mb-4">Spend tokens on click buffs, autoclickers, and cooldown reductions.</p>
+      <!-- Badges above first boost -->
+      <div class="mb-4 p-3 bg-black border-2 border-gray-700 rounded">
+        <div class="text-gray-500 text-[9px] mb-2">🏆 BADGES</div>
+        <div class="flex justify-center gap-2 flex-wrap">
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel" id="badge-boost-1" title="First Click">👆</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-boost-2" title="100 Clicks">⭐</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-boost-3" title="500 Clicks">🌟</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-boost-4" title="1K Clicks">🎯</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-boost-5" title="5K Clicks">💫</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-boost-6" title="10K Clicks">🚀</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-boost-7" title="25K Clicks">👑</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-boost-8" title="7-Day Streak">🔥</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-boost-9" title="First PVP Win">🏆</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-boost-10" title="First Friend">👥</div>
+        </div>
+      </div>
       <div class="space-y-3">
         <div class="bg-pixel-panel border-2 border-gray-700 p-3 rounded flex flex-wrap justify-between items-center gap-2">
           <span>+1 token per 10 clicks (2x)</span>
@@ -502,25 +523,34 @@
           <button type="button" id="buy-tappower" class="boost-btn border-2 border-neon-cyan text-neon-cyan px-3 py-1 rounded text-[10px] hover:bg-neon-cyan/10 disabled:opacity-50 disabled:cursor-not-allowed" data-cost="50" data-boost="tapPower">BUY</button>
         </div>
         <div class="bg-pixel-panel border-2 border-gray-700 p-3 rounded flex flex-wrap justify-between items-center gap-2">
+          <span>+1 token per 10 clicks (3x)</span>
+          <span class="text-neon-yellow">150 tokens</span>
+          <button type="button" id="buy-tappower3" class="boost-btn border-2 border-neon-cyan text-neon-cyan px-3 py-1 rounded text-[10px] hover:bg-neon-cyan/10 disabled:opacity-50 disabled:cursor-not-allowed" data-cost="150" data-boost="tapPower3">BUY</button>
+        </div>
+        <div class="bg-pixel-panel border-2 border-gray-700 p-3 rounded flex flex-wrap justify-between items-center gap-2">
+          <span>+1 token per 10 clicks (4x)</span>
+          <span class="text-neon-yellow">350 tokens</span>
+          <button type="button" id="buy-tappower4" class="boost-btn border-2 border-neon-cyan text-neon-cyan px-3 py-1 rounded text-[10px] hover:bg-neon-cyan/10 disabled:opacity-50 disabled:cursor-not-allowed" data-cost="350" data-boost="tapPower4">BUY</button>
+        </div>
+        <div class="bg-pixel-panel border-2 border-gray-700 p-3 rounded flex flex-wrap justify-between items-center gap-2">
           <span>Autoclicker (1/s)</span>
           <span class="text-neon-yellow">100 tokens</span>
           <button type="button" id="buy-autoclicker" class="boost-btn border-2 border-neon-cyan text-neon-cyan px-3 py-1 rounded text-[10px] hover:bg-neon-cyan/10 disabled:opacity-50 disabled:cursor-not-allowed" data-cost="100" data-boost="autoclicker">BUY</button>
+        </div>
+        <div class="bg-pixel-panel border-2 border-gray-700 p-3 rounded flex flex-wrap justify-between items-center gap-2">
+          <span>Turbo Autoclicker (2/s)</span>
+          <span class="text-neon-yellow">250 tokens</span>
+          <button type="button" id="buy-turbo-autoclicker" class="boost-btn border-2 border-neon-cyan text-neon-cyan px-3 py-1 rounded text-[10px] hover:bg-neon-cyan/10 disabled:opacity-50 disabled:cursor-not-allowed" data-cost="250" data-boost="turboAutoclicker">BUY</button>
         </div>
         <div class="bg-pixel-panel border-2 border-gray-700 p-3 rounded flex flex-wrap justify-between items-center gap-2">
           <span>Shorter cooldown (200ms)</span>
           <span class="text-neon-yellow">75 tokens</span>
           <button type="button" id="buy-cooldown" class="boost-btn border-2 border-neon-cyan text-neon-cyan px-3 py-1 rounded text-[10px] hover:bg-neon-cyan/10 disabled:opacity-50 disabled:cursor-not-allowed" data-cost="75" data-boost="cooldown">BUY</button>
         </div>
-      </div>
-      <!-- Badges (same as Home; shown when boosts activated) -->
-      <div class="mt-4 p-3 bg-black border-2 border-gray-700 rounded">
-        <div class="text-gray-500 text-[9px] mb-2">🏆 BADGES</div>
-        <div class="flex justify-center gap-2 flex-wrap">
-          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel" id="badge-boost-1" title="First Click">👆</div>
-          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-boost-2" title="7-Day Streak">🔥</div>
-          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-boost-3" title="30-Day Streak">💎</div>
-          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-boost-4" title="1K Clicks">🎯</div>
-          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-boost-5" title="10K Clicks">🚀</div>
+        <div class="bg-pixel-panel border-2 border-gray-700 p-3 rounded flex flex-wrap justify-between items-center gap-2">
+          <span>Super cooldown (150ms)</span>
+          <span class="text-neon-yellow">150 tokens</span>
+          <button type="button" id="buy-super-cooldown" class="boost-btn border-2 border-neon-cyan text-neon-cyan px-3 py-1 rounded text-[10px] hover:bg-neon-cyan/10 disabled:opacity-50 disabled:cursor-not-allowed" data-cost="150" data-boost="superCooldown">BUY</button>
         </div>
       </div>
       <p class="text-gray-500 mt-4 text-[10px]">Your balance: <span id="boosts-balance" class="neon-text-cyan">0</span> tokens</p>
@@ -900,6 +930,7 @@
     const CLICKS_PER_TOKEN = 10;
     const COOLDOWN_BASE_MS = 280;
     const COOLDOWN_REDUCED_MS = 200;
+    const COOLDOWN_SUPER_MS = 150;
     const DEATH_IDLE_HOURS = 48;
     const REVIVE_BASE_COST = 20;
     const REVIVE_PERCENT = 0.1;
@@ -934,7 +965,9 @@
     if (isNaN(tokens) || tokens < 0) tokens = Math.floor(totalClicks / CLICKS_PER_TOKEN);
     let tapPower = parseInt(localStorage.getItem('tokenClicker_tapPower') || '1', 10);
     let hasAutoclicker = localStorage.getItem('tokenClicker_autoclicker') === '1';
+    let hasTurboAutoclicker = localStorage.getItem('tokenClicker_turboAutoclicker') === '1';
     let hasCooldownBoost = localStorage.getItem('tokenClicker_cooldown') === '1';
+    let hasSuperCooldownBoost = localStorage.getItem('tokenClicker_superCooldown') === '1';
     let lastDailyClaim = localStorage.getItem('tokenClicker_lastDailyClaim') || '';
     let claimed100Today = localStorage.getItem('tokenClicker_claimed100Today') === '1';
     let claimedWeekly = localStorage.getItem('tokenClicker_claimedWeekly') === '1';
@@ -981,14 +1014,31 @@
     const tokenRateEl = document.getElementById('token-rate');
     const clickCountLabel = document.getElementById('click-count-label');
 
-    function cooldownMs() { return hasCooldownBoost ? COOLDOWN_REDUCED_MS : COOLDOWN_BASE_MS; }
+    function cooldownMs() { return hasSuperCooldownBoost ? COOLDOWN_SUPER_MS : (hasCooldownBoost ? COOLDOWN_REDUCED_MS : COOLDOWN_BASE_MS); }
 
+    var lastTokensSyncAt = 0;
+    var TOKENS_SYNC_INTERVAL_MS = 5000;
+    function syncTokensToLeaderboard() {
+      var wallet = typeof getPvpPlayerId === 'function' ? getPvpPlayerId() : null;
+      if (!wallet || wallet.indexOf('guest_') === 0) return;
+      var supabase = window.supabaseClient;
+      if (!supabase || Date.now() - lastTokensSyncAt < TOKENS_SYNC_INTERVAL_MS) return;
+      lastTokensSyncAt = Date.now();
+      supabase.from('leaderboard').select('id').eq('wallet_address', wallet).maybeSingle().then(function(r) {
+        var row = r.data;
+        if (row) {
+          supabase.from('leaderboard').update({ tokens: Math.max(0, tokens), updated_at: new Date().toISOString() }).eq('id', row.id).then(function() {});
+        }
+      });
+    }
     function save() {
       localStorage.setItem('tokenClicker_totalClicks', String(totalClicks));
       localStorage.setItem('tokenClicker_tokens', String(tokens));
       localStorage.setItem('tokenClicker_tapPower', String(tapPower));
       localStorage.setItem('tokenClicker_autoclicker', hasAutoclicker ? '1' : '0');
+      localStorage.setItem('tokenClicker_turboAutoclicker', hasTurboAutoclicker ? '1' : '0');
       localStorage.setItem('tokenClicker_cooldown', hasCooldownBoost ? '1' : '0');
+      localStorage.setItem('tokenClicker_superCooldown', hasSuperCooldownBoost ? '1' : '0');
       localStorage.setItem('tokenClicker_lastDailyClaim', lastDailyClaim);
       localStorage.setItem('tokenClicker_claimed100Today', claimed100Today ? '1' : '0');
       localStorage.setItem('tokenClicker_claimedWeekly', claimedWeekly ? '1' : '0');
@@ -1011,6 +1061,7 @@
       localStorage.setItem('tokenClicker_lastActivityAt', String(lastActivityAt));
       localStorage.setItem('tokenClicker_isDead', isDead ? '1' : '0');
       localStorage.setItem('tokenClicker_deathCount', String(deathCount));
+      if (typeof syncTokensToLeaderboard === 'function') syncTokensToLeaderboard();
     }
 
     function getBirdLevel(taps) {
@@ -1146,8 +1197,8 @@
       const homeMult = document.getElementById('home-mult');
       const homeRegen = document.getElementById('home-regen');
       if (homePower) homePower.textContent = tapPower;
-      if (homeMult) homeMult.textContent = '1.0';
-      if (homeRegen) homeRegen.textContent = hasAutoclicker ? '1' : '0';
+      if (homeMult) homeMult.textContent = tapPower + '.0';
+      if (homeRegen) homeRegen.textContent = hasTurboAutoclicker ? '2' : (hasAutoclicker ? '1' : '0');
       updateBadges();
       updateBoostsUI();
       updateBountiesUI();
@@ -1235,12 +1286,19 @@
     }
 
     function updateBadges() {
+      const firstPvpWin = localStorage.getItem('tokenClicker_firstPvpWin') === '1';
+      const firstFriend = !!localStorage.getItem('tokenClicker_invitedBy');
       const pairs = [
         [['badge-1', 'badge-boost-1'], totalClicks >= 1],
-        [['badge-2', 'badge-boost-2'], false],
-        [['badge-3', 'badge-boost-3'], false],
+        [['badge-2', 'badge-boost-2'], totalClicks >= 100],
+        [['badge-3', 'badge-boost-3'], totalClicks >= 500],
         [['badge-4', 'badge-boost-4'], totalClicks >= 1000],
-        [['badge-5', 'badge-boost-5'], totalClicks >= 10000]
+        [['badge-5', 'badge-boost-5'], totalClicks >= 5000],
+        [['badge-6', 'badge-boost-6'], totalClicks >= 10000],
+        [['badge-7', 'badge-boost-7'], totalClicks >= 25000],
+        [['badge-8', 'badge-boost-8'], false],
+        [['badge-9', 'badge-boost-9'], firstPvpWin],
+        [['badge-10', 'badge-boost-10'], firstFriend]
       ];
       pairs.forEach(([ids, unlocked]) => {
         ids.forEach(id => {
@@ -1257,9 +1315,21 @@
       document.querySelectorAll('.boost-btn').forEach(btn => {
         const cost = parseInt(btn.dataset.cost, 10);
         const boost = btn.dataset.boost;
-        const owned = (boost === 'tapPower' && tapPower >= 2) || (boost === 'autoclicker' && hasAutoclicker) || (boost === 'cooldown' && hasCooldownBoost);
-        btn.disabled = owned || tokens < cost;
-        btn.textContent = owned ? 'OWNED' : 'BUY';
+        let owned = false;
+        if (boost === 'tapPower') owned = tapPower >= 2;
+        else if (boost === 'tapPower3') owned = tapPower >= 3;
+        else if (boost === 'tapPower4') owned = tapPower >= 4;
+        else if (boost === 'autoclicker') owned = hasAutoclicker;
+        else if (boost === 'turboAutoclicker') owned = hasTurboAutoclicker;
+        else if (boost === 'cooldown') owned = hasCooldownBoost;
+        else if (boost === 'superCooldown') owned = hasSuperCooldownBoost;
+        let blocked = false;
+        if (boost === 'tapPower3' && tapPower < 2) blocked = true;
+        if (boost === 'tapPower4' && tapPower < 3) blocked = true;
+        if (boost === 'turboAutoclicker' && !hasAutoclicker) blocked = true;
+        if (boost === 'superCooldown' && !hasCooldownBoost) blocked = true;
+        btn.disabled = owned || blocked || tokens < cost;
+        btn.textContent = owned ? 'OWNED' : blocked ? 'UPGRADE' : 'BUY';
       });
     }
 
@@ -1505,15 +1575,21 @@
         const boost = btn.dataset.boost;
         if (tokens < cost) return;
         if (boost === 'tapPower' && tapPower < 2) { tokens -= cost; tapPower = 2; }
+        if (boost === 'tapPower3' && tapPower >= 2 && tapPower < 3) { tokens -= cost; tapPower = 3; }
+        if (boost === 'tapPower4' && tapPower >= 3 && tapPower < 4) { tokens -= cost; tapPower = 4; }
         if (boost === 'autoclicker' && !hasAutoclicker) { tokens -= cost; hasAutoclicker = true; startAutoclicker(); }
+        if (boost === 'turboAutoclicker' && hasAutoclicker && !hasTurboAutoclicker) { tokens -= cost; hasTurboAutoclicker = true; restartAutoclicker(); }
         if (boost === 'cooldown' && !hasCooldownBoost) { tokens -= cost; hasCooldownBoost = true; }
+        if (boost === 'superCooldown' && hasCooldownBoost && !hasSuperCooldownBoost) { tokens -= cost; hasSuperCooldownBoost = true; }
         updateUI();
         save();
       });
     });
 
+    function getAutoclickerIntervalMs() { return (hasAutoclicker && hasTurboAutoclicker) ? 500 : 1000; }
     function startAutoclicker() {
       if (autoclickerInterval) return;
+      const ms = getAutoclickerIntervalMs();
       autoclickerInterval = setInterval(() => {
         totalClicks++;
         const prevEffective = (totalClicks - 1) * tapPower;
@@ -1527,7 +1603,11 @@
         weeklyClicks++;
         updateUI();
         save();
-      }, 1000);
+      }, ms);
+    }
+    function restartAutoclicker() {
+      if (autoclickerInterval) { clearInterval(autoclickerInterval); autoclickerInterval = null; }
+      if (hasAutoclicker) startAutoclicker();
     }
     if (hasAutoclicker) startAutoclicker();
 
@@ -2004,6 +2084,62 @@
         if (typeof loadFriendsInvited === 'function') loadFriendsInvited();
       }).catch(function() { localStorage.removeItem('tokenClicker_invitedBy'); });
     }
+    function getFriendTokenCache() {
+      try {
+        var raw = localStorage.getItem('tokenClicker_friendTokens');
+        if (!raw) return { byWallet: {}, byRefCode: {} };
+        var parsed = JSON.parse(raw);
+        return { byWallet: parsed.byWallet || {}, byRefCode: parsed.byRefCode || {} };
+      } catch (e) { return { byWallet: {}, byRefCode: {} }; }
+    }
+    function setFriendTokenCache(cache) {
+      try { localStorage.setItem('tokenClicker_friendTokens', JSON.stringify(cache)); } catch (e) {}
+    }
+    function mergeFriendTokenCache(byWallet, byRefCode) {
+      var c = getFriendTokenCache();
+      if (byWallet) Object.keys(byWallet).forEach(function(k) { c.byWallet[k] = byWallet[k]; });
+      if (byRefCode) Object.keys(byRefCode).forEach(function(k) { c.byRefCode[k.toUpperCase()] = byRefCode[k]; });
+      setFriendTokenCache(c);
+    }
+    var friendsLeaderboardChannel = null;
+    function subscribeFriendsLeaderboardRealtime() {
+      var supabase = window.supabaseClient;
+      if (!supabase || friendsLeaderboardChannel) return;
+      friendsLeaderboardChannel = supabase.channel('friends-leaderboard').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'leaderboard' }, function(payload) {
+        var row = payload.new;
+        if (!row) return;
+        var w = (row.wallet_address || '').trim();
+        var r = (row.ref_code || '').trim().toUpperCase();
+        var t = row.tokens != null ? row.tokens : 0;
+        var cache = getFriendTokenCache();
+        var changed = false;
+        if (w && (w in cache.byWallet)) { mergeFriendTokenCache({ [w]: t }, null); changed = true; }
+        if (r && (r in cache.byRefCode)) { mergeFriendTokenCache(null, { [r]: t }); changed = true; }
+        if (changed && document.getElementById('page-friends') && document.getElementById('page-friends').classList.contains('active')) {
+          if (typeof loadFriendsInvited === 'function') loadFriendsInvited();
+          if (typeof loadFriendsAddedByCode === 'function') loadFriendsAddedByCode();
+        }
+      }).subscribe();
+    }
+    function unsubscribeFriendsLeaderboardRealtime() {
+      if (window.supabaseClient && friendsLeaderboardChannel) {
+        try { window.supabaseClient.removeChannel(friendsLeaderboardChannel); } catch (e) {}
+        friendsLeaderboardChannel = null;
+      }
+    }
+    var friendsPollInterval = null;
+    function startFriendsTokenPolling() {
+      if (friendsPollInterval) return;
+      friendsPollInterval = setInterval(function() {
+        if (document.getElementById('page-friends') && document.getElementById('page-friends').classList.contains('active')) {
+          if (typeof loadFriendsInvited === 'function') loadFriendsInvited();
+          if (typeof loadFriendsAddedByCode === 'function') loadFriendsAddedByCode();
+        }
+      }, 15000);
+    }
+    function stopFriendsTokenPolling() {
+      if (friendsPollInterval) { clearInterval(friendsPollInterval); friendsPollInterval = null; }
+    }
     function loadFriendsInvited() {
       var supabase = window.supabaseClient;
       var list = document.getElementById('friends-invited-list');
@@ -2032,14 +2168,19 @@
             return;
           }
           var wallets = r.data.map(function(e) { return (e.invited_wallet || '').trim(); }).filter(Boolean);
+          var cache = getFriendTokenCache();
           var tokensByWallet = {};
+          wallets.forEach(function(w) { tokensByWallet[w] = cache.byWallet[w] != null ? cache.byWallet[w] : null; });
+          renderInvitedList(r.data, tokensByWallet);
           if (wallets.length > 0) {
             supabase.from('leaderboard').select('wallet_address, tokens').in('wallet_address', wallets).then(function(lr) {
-              if (lr.data) lr.data.forEach(function(row) { tokensByWallet[row.wallet_address] = row.tokens != null ? row.tokens : 0; });
+              if (lr.data) {
+                lr.data.forEach(function(row) { tokensByWallet[row.wallet_address] = row.tokens != null ? row.tokens : 0; });
+                mergeFriendTokenCache(tokensByWallet, null);
+              }
               renderInvitedList(r.data, tokensByWallet);
+              subscribeFriendsLeaderboardRealtime();
             });
-          } else {
-            renderInvitedList(r.data, {});
           }
           function renderInvitedList(data, tokensByWallet) {
             list.innerHTML = data.map(function(e, i) {
@@ -2133,14 +2274,21 @@
             return;
           }
           var codes = r.data.map(function(e) { return (e.friend_ref_code || '').trim(); }).filter(Boolean);
+          var cache = getFriendTokenCache();
           var tokensByCode = {};
+          codes.forEach(function(c) { var u = c.toUpperCase(); tokensByCode[u] = cache.byRefCode[u] != null ? cache.byRefCode[u] : null; });
+          renderAddedList(r.data, tokensByCode);
           if (codes.length > 0) {
             supabase.from('leaderboard').select('ref_code, tokens').in('ref_code', codes).then(function(lr) {
-              if (lr.data) lr.data.forEach(function(row) { tokensByCode[(row.ref_code || '').toUpperCase()] = row.tokens != null ? row.tokens : 0; });
+              if (lr.data) {
+                lr.data.forEach(function(row) { tokensByCode[(row.ref_code || '').toUpperCase()] = row.tokens != null ? row.tokens : 0; });
+                var byRef = {};
+                Object.keys(tokensByCode).forEach(function(k) { byRef[k] = tokensByCode[k]; });
+                mergeFriendTokenCache(null, byRef);
+              }
               renderAddedList(r.data, tokensByCode);
+              subscribeFriendsLeaderboardRealtime();
             });
-          } else {
-            renderAddedList(r.data, {});
           }
           function renderAddedList(data, tokensByCode) {
             list.innerHTML = data.map(function(e, i) {
@@ -2818,6 +2966,8 @@
       if (isNaN(stake) || stake < 1) stake = 5;
       if (winnerWallet === me) {
         if (typeof addTokens === 'function') addTokens(stake);
+        try { localStorage.setItem('tokenClicker_firstPvpWin', '1'); } catch (e) {}
+        if (typeof updateBadges === 'function') updateBadges();
         document.getElementById('pvp-duel-result-title').textContent = 'YOU WIN!';
         document.getElementById('pvp-duel-result-title').className = 'text-lg font-bold mb-2 neon-text-green';
         document.getElementById('pvp-duel-result-detail').textContent = 'You won ' + stake + ' tokens. You\'re on the leaderboard.';
@@ -3021,6 +3171,13 @@
       const el = document.getElementById('page-' + pageId);
       if (el) el.classList.add('active');
       if (pageId === 'home' && typeof updateUI === 'function') updateUI();
+      if (pageId === 'friends') {
+        startFriendsTokenPolling();
+        if (typeof loadFriendsInvited === 'function') loadFriendsInvited();
+        if (typeof loadFriendsAddedByCode === 'function') loadFriendsAddedByCode();
+      } else {
+        stopFriendsTokenPolling();
+      }
       document.querySelectorAll('.nav-link').forEach(a => {
         a.classList.toggle('text-neon-cyan', a.getAttribute('data-page') === pageId);
         a.classList.toggle('text-gray-400', a.getAttribute('data-page') !== pageId);
