@@ -423,13 +423,14 @@
   <header class="sticky top-0 z-50 bg-black/90 border-b-2 border-pixel-border backdrop-blur-sm">
     <div class="max-w-lg mx-auto px-4 py-2 flex items-center justify-between gap-2">
       <div class="flex items-center gap-2 min-w-0 flex-1">
-        <img src="assets/cardinal.png" alt="1N BLOCKCHAIN" class="h-8 md:h-9 object-contain object-left flex-shrink-0" />
+        <a href="#home" class="flex-shrink-0" aria-label="Home"><img src="assets/cardinal.png" alt="1N BLOCKCHAIN" class="h-8 md:h-9 object-contain object-left" /></a>
         <span class="text-gray-400 shrink-0">TOKENS</span>
         <span id="top-tokens" class="neon-text-cyan font-bold shrink-0">0</span>
       </div>
       <div class="flex items-center gap-2 shrink-0">
         <a href="#multiplayer" class="p-2 rounded border-2 border-neon-pink text-neon-pink hover:shadow-neon-sm text-[10px]">PVP</a>
         <button type="button" id="notifications-btn" aria-label="Notifications" class="p-2 rounded border-2 border-gray-500 text-gray-400 hover:border-neon-yellow hover:text-neon-yellow">🔔</button>
+        <button type="button" id="header-settings-btn" aria-label="Settings" class="p-2 rounded border-2 border-gray-500 text-gray-400 hover:border-neon-cyan hover:text-neon-cyan">⚙️</button>
       </div>
     </div>
   </header>
@@ -440,16 +441,27 @@
       <!-- Metric windows above NFT -->
       <div class="grid grid-cols-3 gap-2 mb-4">
         <div class="bg-pixel-panel border-2 border-gray-700 p-2 text-center rounded">
-          <div class="text-gray-500 home-center-text">TAP/SEC</div>
-          <div id="clicks-per-sec" class="neon-text-green home-center-value">0</div>
+          <div class="text-gray-500 home-center-text">CLICK RATE</div>
+          <div id="clicks-per-sec" class="neon-text-green home-center-value" title="Taps per second">0</div>
+          <div class="text-[9px] text-gray-600">/s</div>
         </div>
         <div class="bg-pixel-panel border-2 border-gray-700 p-2 text-center rounded">
           <div class="text-gray-500 home-center-text">TOTAL TAPS</div>
           <div id="total-clicks" class="neon-text-cyan home-center-value">0</div>
         </div>
         <div class="bg-pixel-panel border-2 border-gray-700 p-2 text-center rounded">
-          <div class="text-gray-500 home-center-text">TAP RATE</div>
-          <div id="token-rate" class="neon-text-yellow home-center-value">1 / 10</div>
+          <div class="text-gray-500 home-center-text">PEAK</div>
+          <div id="peak-click-rate" class="neon-text-pink home-center-value" title="Best taps in 1 sec">0</div>
+          <div class="text-[9px] text-gray-600">/s</div>
+        </div>
+      </div>
+      <!-- Power bar: 1 per click, 5/sec regen. Levels & cooldown boosts increase capacity & regen -->
+      <div class="flex justify-center mb-3">
+        <div class="w-full max-w-sm md:max-w-md">
+          <p class="text-gray-500 text-[9px] mb-1 flex justify-between"><span>POWER</span><span id="power-numeric" class="text-neon-cyan/90">150 / 150</span></p>
+          <div class="w-full h-3 bg-black border-2 border-gray-700 rounded overflow-hidden">
+            <div id="power-bar-fill" class="h-full bg-gradient-to-r from-neon-cyan to-neon-green transition-all duration-75 ease-linear" style="width: 100%"></div>
+          </div>
         </div>
       </div>
       <!-- NFT Clicker -->
@@ -467,11 +479,11 @@
         </div>
       </div>
       <p class="text-center text-gray-500 mt-4 home-center-text">Every 10 clicks = 1 token</p>
-      <!-- Stats bar (match reference) -->
+      <!-- Stats bar -->
       <div class="mt-4 bg-pixel-panel border-2 border-gray-700 rounded px-3 py-2 home-center-text flex flex-wrap justify-center gap-x-4 gap-y-1">
         <span>Tap Power: <span id="home-power" class="text-neon-yellow">1</span>x</span>
-        <span>Multiplier: <span id="home-mult" class="text-neon-yellow">1.0</span>x</span>
-        <span>Regen: <span id="home-regen" class="text-neon-yellow">1</span>/s</span>
+        <span>1 tok per <span id="home-token-rate" class="text-neon-yellow">10</span> taps</span>
+        <span>AC: <span id="home-regen" class="text-neon-yellow">0</span>/s</span>
       </div>
       <!-- Badges -->
       <div class="mt-4 text-center">
@@ -511,6 +523,15 @@
 
     <!-- Boosts -->
     <section id="page-boosts" class="page p-4">
+      <div class="pvp-invite-banner-inline hidden mb-4">
+        <div class="bg-neon-cyan/20 border-2 border-neon-cyan rounded-lg p-3 flex items-center justify-between gap-3 shadow-lg">
+          <div class="flex-1 min-w-0">
+            <p class="text-neon-cyan text-[10px] font-bold">GAME ABOUT TO START</p>
+            <p class="text-gray-300 text-[9px]">You're invited! Tap to join the duel.</p>
+          </div>
+          <button type="button" class="pvp-invite-banner-join-btn shrink-0 py-2 px-4 border-2 border-neon-green text-neon-green rounded text-[10px] font-bold hover:bg-neon-green/20 bg-neon-green/10">JOIN NOW</button>
+        </div>
+      </div>
       <h2 class="text-neon-cyan mb-4 border-b-2 border-gray-700 pb-2">BOOSTS</h2>
       <p class="text-gray-400 mb-4">Spend tokens on click buffs, autoclickers, and cooldown reductions.</p>
       <!-- Badges above first boost -->
@@ -573,12 +594,30 @@
             </div>
           </div>
         </div>
+        <div class="boost-category">
+          <div class="text-neon-pink text-[10px] font-bold mb-2 uppercase tracking-wider">⚡ Power Bar</div>
+          <div class="space-y-2">
+            <div class="bg-pixel-panel border-2 border-gray-700 p-3 rounded flex flex-wrap justify-between items-center gap-2">
+              <div class="flex-1 min-w-0"><span>+50 power capacity</span><div class="text-neon-yellow text-[10px] font-bold mt-1">100 tokens</div></div>
+              <button type="button" id="buy-power-capacity" class="boost-btn border-2 border-neon-pink text-neon-pink px-3 py-1 rounded text-[10px] hover:bg-neon-pink/10 disabled:opacity-50 disabled:cursor-not-allowed" data-cost="100" data-boost="powerCapacity">BUY</button>
+            </div>
+          </div>
+        </div>
       </div>
       <p class="text-gray-500 mt-4 text-[10px]">Your balance: <span id="boosts-balance" class="neon-text-cyan">0</span> tokens</p>
     </section>
 
     <!-- Bounties -->
     <section id="page-bounties" class="page p-4">
+      <div class="pvp-invite-banner-inline hidden mb-4">
+        <div class="bg-neon-cyan/20 border-2 border-neon-cyan rounded-lg p-3 flex items-center justify-between gap-3 shadow-lg">
+          <div class="flex-1 min-w-0">
+            <p class="text-neon-cyan text-[10px] font-bold">GAME ABOUT TO START</p>
+            <p class="text-gray-300 text-[9px]">You're invited! Tap to join the duel.</p>
+          </div>
+          <button type="button" class="pvp-invite-banner-join-btn shrink-0 py-2 px-4 border-2 border-neon-green text-neon-green rounded text-[10px] font-bold hover:bg-neon-green/20 bg-neon-green/10">JOIN NOW</button>
+        </div>
+      </div>
       <h2 class="text-neon-green mb-4 border-b-2 border-gray-700 pb-2">BOUNTIES</h2>
       <p class="text-gray-400 mb-4">Daily rewards, weekly challenges, click milestones. Collect the bird cards!</p>
       <div id="graduating-bounty-bar" class="mb-3 p-3 bg-black border-2 border-neon-green/50 rounded text-[9px]">
@@ -701,6 +740,13 @@
             <button type="button" id="claim-lucky7" class="bounty-claim border-2 border-neon-yellow text-neon-yellow px-3 py-1 rounded text-[10px] hover:bg-neon-yellow/10 disabled:opacity-50" data-id="lucky777" data-reward="17">CLAIM</button>
           </div>
         </div>
+        <div id="bounty-clickmaster" class="bounty-row bounty-card-yellow p-3 flex flex-wrap justify-between items-center gap-2" data-bounty-id="clickmaster" data-bounty-name="Click master" data-bounty-reward="12">
+          <div class="flex-1 min-w-0"><div>Click master</div><div class="text-[10px] text-gray-400">Hit 5+ taps in one second. Best: <span id="bounty-clickmaster-peak">0</span>/s</div><div class="text-neon-yellow text-[10px] font-bold mt-1">Reward: 12 tokens</div></div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="bounty-bird-card bird-yellow"><img src="assets/cardinal.png" alt="" /></div>
+            <button type="button" id="claim-clickmaster" class="bounty-claim border-2 border-neon-yellow text-neon-yellow px-3 py-1 rounded text-[10px] hover:bg-neon-yellow/10 disabled:opacity-50" data-id="clickmaster" data-reward="12">CLAIM</button>
+          </div>
+        </div>
         <div id="bounty-speed" class="bounty-row bounty-card-pink p-3 flex flex-wrap justify-between items-center gap-2" data-bounty-id="speeddemon" data-bounty-name="Speed demon" data-bounty-reward="20">
           <div class="flex-1 min-w-0"><div>Speed demon</div><div class="text-[10px] text-gray-400">Hit 8+ taps in one second</div><div class="text-neon-yellow text-[10px] font-bold mt-1">Reward: 20 tokens</div></div>
           <div class="flex items-center gap-2 flex-shrink-0">
@@ -762,9 +808,17 @@
 
     <!-- Wallet -->
     <section id="page-wallet" class="page p-4">
+      <div class="pvp-invite-banner-inline hidden mb-4">
+        <div class="bg-neon-cyan/20 border-2 border-neon-cyan rounded-lg p-3 flex items-center justify-between gap-3 shadow-lg">
+          <div class="flex-1 min-w-0">
+            <p class="text-neon-cyan text-[10px] font-bold">GAME ABOUT TO START</p>
+            <p class="text-gray-300 text-[9px]">You're invited! Tap to join the duel.</p>
+          </div>
+          <button type="button" class="pvp-invite-banner-join-btn shrink-0 py-2 px-4 border-2 border-neon-green text-neon-green rounded text-[10px] font-bold hover:bg-neon-green/20 bg-neon-green/10">JOIN NOW</button>
+        </div>
+      </div>
       <div class="flex items-center justify-between gap-2 mb-4 border-b-2 border-gray-700 pb-2">
         <h2 class="text-neon-yellow">WALLET</h2>
-        <button type="button" id="wallet-settings-open-btn" class="py-1.5 px-3 border-2 border-neon-cyan text-neon-cyan rounded text-[10px] hover:bg-neon-cyan/10">SETTINGS</button>
       </div>
       <!-- Balances -->
       <div class="bg-pixel-panel border-2 border-gray-700 p-4 rounded mb-4">
@@ -915,7 +969,11 @@
             <div class="w-24 h-24 pixel-border rounded-lg bg-black/80 mt-2 mx-auto flex items-center justify-center text-3xl text-gray-600">?</div>
           </div>
         </div>
-        <p id="pvp-duel-waiting" class="text-center text-gray-500 text-[9px] mt-2 hidden">Waiting for opponent… Share the room link.</p>
+        <div id="pvp-duel-waiting" class="text-center text-gray-500 text-[9px] mt-2 hidden">
+          <p class="font-bold text-neon-cyan mb-1">Waiting for opponent…</p>
+          <p>Share the room link with a friend. They join to start the race.</p>
+          <p id="pvp-duel-room-link" class="text-[8px] text-gray-600 mt-1 break-all"></p>
+        </div>
         <div class="mt-3 text-center">
           <button type="button" id="pvp-duel-end-game-btn" class="py-2 px-4 border-2 border-neon-pink text-neon-pink rounded text-[9px] hover:bg-neon-pink/10">END GAME</button>
         </div>
@@ -999,6 +1057,7 @@
     let hasTurboAutoclicker = localStorage.getItem('tokenClicker_turboAutoclicker') === '1';
     let hasCooldownBoost = localStorage.getItem('tokenClicker_cooldown') === '1';
     let hasSuperCooldownBoost = localStorage.getItem('tokenClicker_superCooldown') === '1';
+    let hasPowerCapacityBoost = localStorage.getItem('tokenClicker_powerCapacity') === '1';
     let lastDailyClaim = localStorage.getItem('tokenClicker_lastDailyClaim') || '';
     let lastShareClaim = localStorage.getItem('tokenClicker_lastShareClaim') || '';
     let claimed100Today = localStorage.getItem('tokenClicker_claimed100Today') === '1';
@@ -1012,6 +1071,7 @@
     let claimed10000total = localStorage.getItem('tokenClicker_claimed10000total') === '1';
     let claimedLucky777 = localStorage.getItem('tokenClicker_claimedLucky777') === '1';
     let claimedSpeedDemon = localStorage.getItem('tokenClicker_speedDemonClaimed') === '1';
+    let claimedClickMaster = localStorage.getItem('tokenClicker_claimedClickMaster') === '1';
     let claimedHoarder = localStorage.getItem('tokenClicker_claimedHoarder') === '1';
     let currentBountyTab = localStorage.getItem('tokenClicker_bountyTab') || 'toclaim';
     let lastDate = localStorage.getItem('tokenClicker_lastDate') || '';
@@ -1025,6 +1085,28 @@
     let lastClickTime = 0;
     let clicksInLastSecond = 0;
     let lastSecondTime = Date.now();
+    let power = 150;
+    let lastPowerUpdateAt = Date.now();
+    let peakClicksPerSecond = 0;
+    const POWER_BASE_MAX = 150;
+    const POWER_REGEN_BASE = 5;
+    const POWER_COST_PER_CLICK = 3;
+
+    function getPowerMax() {
+      var idx = 0;
+      for (var i = BIRD_LEVELS.length - 1; i >= 0; i--) {
+        if (totalClicks >= BIRD_LEVELS[i].taps) { idx = i; break; }
+      }
+      var fromLevel = POWER_BASE_MAX + idx * 10;
+      var fromTapPower = (tapPower - 1) * 25;
+      var fromCapacityBoost = hasPowerCapacityBoost ? 50 : 0;
+      return fromLevel + fromTapPower + fromCapacityBoost;
+    }
+    function getPowerRegenPerSec() {
+      if (hasSuperCooldownBoost) return POWER_REGEN_BASE + 2;
+      if (hasCooldownBoost) return POWER_REGEN_BASE + 1;
+      return POWER_REGEN_BASE;
+    }
     let autoclickerInterval = null;
 
     function todayKey() { return new Date().toISOString().slice(0, 10); }
@@ -1042,10 +1124,22 @@
     const walletBalance = document.getElementById('wallet-balance');
     const totalClicksEl = document.getElementById('total-clicks');
     const clicksPerSecEl = document.getElementById('clicks-per-sec');
-    const tokenRateEl = document.getElementById('token-rate');
     const clickCountLabel = document.getElementById('click-count-label');
 
     function cooldownMs() { return hasSuperCooldownBoost ? COOLDOWN_SUPER_MS : (hasCooldownBoost ? COOLDOWN_REDUCED_MS : COOLDOWN_BASE_MS); }
+    function powerRegenPerMs() { return getPowerRegenPerSec() / 1000; }
+    function updatePowerBar() {
+      var max = getPowerMax();
+      var pct = max > 0 ? Math.min(100, Math.max(0, (power / max) * 100)) : 0;
+      var fill = document.getElementById('power-bar-fill');
+      if (fill) fill.style.width = pct + '%';
+      var num = document.getElementById('power-numeric');
+      if (num) num.textContent = Math.floor(power) + ' / ' + max;
+      if (nftClicker) {
+        if (power >= POWER_COST_PER_CLICK) nftClicker.classList.remove('cooldown');
+        else nftClicker.classList.add('cooldown');
+      }
+    }
 
     var lastTokensSyncAt = 0;
     var TOKENS_SYNC_INTERVAL_MS = 5000;
@@ -1070,6 +1164,7 @@
       localStorage.setItem('tokenClicker_turboAutoclicker', hasTurboAutoclicker ? '1' : '0');
       localStorage.setItem('tokenClicker_cooldown', hasCooldownBoost ? '1' : '0');
       localStorage.setItem('tokenClicker_superCooldown', hasSuperCooldownBoost ? '1' : '0');
+      localStorage.setItem('tokenClicker_powerCapacity', hasPowerCapacityBoost ? '1' : '0');
       localStorage.setItem('tokenClicker_lastDailyClaim', lastDailyClaim);
       localStorage.setItem('tokenClicker_lastShareClaim', lastShareClaim);
       localStorage.setItem('tokenClicker_claimed100Today', claimed100Today ? '1' : '0');
@@ -1083,6 +1178,7 @@
       localStorage.setItem('tokenClicker_claimed10000total', claimed10000total ? '1' : '0');
       localStorage.setItem('tokenClicker_claimedLucky777', claimedLucky777 ? '1' : '0');
       localStorage.setItem('tokenClicker_speedDemonClaimed', claimedSpeedDemon ? '1' : '0');
+      localStorage.setItem('tokenClicker_claimedClickMaster', claimedClickMaster ? '1' : '0');
       localStorage.setItem('tokenClicker_claimedHoarder', claimedHoarder ? '1' : '0');
       localStorage.setItem('tokenClicker_bountyTab', currentBountyTab);
       localStorage.setItem('tokenClicker_lastDate', lastDate);
@@ -1140,6 +1236,7 @@
         case '10000total': return claimed10000total;
         case 'lucky777': return claimedLucky777;
         case 'speeddemon': return claimedSpeedDemon;
+        case 'clickmaster': return claimedClickMaster;
         case 'hoarder': return claimedHoarder;
         default: return false;
       }
@@ -1223,14 +1320,17 @@
       if (bountiesBal) bountiesBal.textContent = tokens;
       if (totalClicksEl) totalClicksEl.textContent = totalClicks;
       if (clickCountLabel) clickCountLabel.textContent = totalClicks;
-      if (tokenRateEl) tokenRateEl.textContent = tapPower + ' / 10';
+      var tapsPerToken = Math.max(1, Math.ceil(10 / tapPower));
       const homePower = document.getElementById('home-power');
-      const homeMult = document.getElementById('home-mult');
+      const homeTokenRate = document.getElementById('home-token-rate');
       const homeRegen = document.getElementById('home-regen');
       if (homePower) homePower.textContent = tapPower;
-      if (homeMult) homeMult.textContent = tapPower + '.0';
+      if (homeTokenRate) homeTokenRate.textContent = tapsPerToken;
       if (homeRegen) homeRegen.textContent = hasTurboAutoclicker ? '2' : (hasAutoclicker ? '1' : '0');
+      var peakEl = document.getElementById('peak-click-rate');
+      if (peakEl) peakEl.textContent = peakClicksPerSecond;
       updateBadges();
+      if (typeof updatePowerBar === 'function') updatePowerBar();
       updateBoostsUI();
       updateBountiesUI();
       updateGraduatingBountyBar();
@@ -1354,6 +1454,7 @@
         else if (boost === 'turboAutoclicker') owned = hasTurboAutoclicker;
         else if (boost === 'cooldown') owned = hasCooldownBoost;
         else if (boost === 'superCooldown') owned = hasSuperCooldownBoost;
+        else if (boost === 'powerCapacity') owned = hasPowerCapacityBoost;
         let blocked = false;
         if (boost === 'tapPower3' && tapPower < 2) blocked = true;
         if (boost === 'tapPower4' && tapPower < 3) blocked = true;
@@ -1421,6 +1522,14 @@
         claimLuckyBtn.disabled = totalClicks < 777 || claimedLucky777;
         claimLuckyBtn.textContent = claimedLucky777 ? 'CLAIMED' : 'CLAIM';
       }
+      var clickMasterUnlocked = localStorage.getItem('tokenClicker_clickMaster') === '1' || peakClicksPerSecond >= 5;
+      var claimClickMasterBtn = document.getElementById('claim-clickmaster');
+      if (claimClickMasterBtn) {
+        claimClickMasterBtn.disabled = !clickMasterUnlocked || claimedClickMaster;
+        claimClickMasterBtn.textContent = claimedClickMaster ? 'CLAIMED' : 'CLAIM';
+      }
+      var peakEl = document.getElementById('bounty-clickmaster-peak');
+      if (peakEl) peakEl.textContent = peakClicksPerSecond;
       var speedUnlocked = localStorage.getItem('tokenClicker_speedDemon') === '1';
       var claimSpeedBtn = document.getElementById('claim-speed');
       if (claimSpeedBtn) {
@@ -1521,10 +1630,11 @@
 
     function onValidClick() {
       if (isDead) return -1;
-      const now = Date.now();
-      if (now - lastClickTime < cooldownMs()) return -1;
-      lastClickTime = now;
-      lastActivityAt = now;
+      if (power < POWER_COST_PER_CLICK) return -1;
+      power = Math.max(0, power - POWER_COST_PER_CLICK);
+      lastClickTime = Date.now();
+      lastActivityAt = lastClickTime;
+      updatePowerBar();
 
       totalClicks++;
       const prevEffective = (totalClicks - 1) * tapPower;
@@ -1532,12 +1642,15 @@
       const earned = Math.floor(newEffective / CLICKS_PER_TOKEN) - Math.floor(prevEffective / CLICKS_PER_TOKEN);
       tokens += earned;
 
+      const now = lastClickTime;
       const nowSec = now / 1000;
       if (Math.floor(nowSec) > Math.floor(lastSecondTime / 1000)) {
         lastSecondTime = now;
         clicksInLastSecond = 0;
       }
       clicksInLastSecond++;
+      if (clicksInLastSecond > peakClicksPerSecond) peakClicksPerSecond = clicksInLastSecond;
+      if (clicksInLastSecond >= 5) try { localStorage.setItem('tokenClicker_clickMaster', '1'); } catch (e) {}
       if (clicksInLastSecond >= 8) try { localStorage.setItem('tokenClicker_speedDemon', '1'); } catch (e) {}
 
       const today = todayKey();
@@ -1592,10 +1705,14 @@
     }
 
     if (nftClicker) nftClicker.addEventListener('click', function(e) {
-      nftClicker.classList.add('cooldown');
       var earned = onValidClick();
-      if (earned >= 0) spawnClickEffects(earned, e);
-      setTimeout(function() { nftClicker.classList.remove('cooldown'); }, cooldownMs());
+      if (earned >= 0) {
+        spawnClickEffects(earned, e);
+        nftClicker.classList.remove('pvp-duel-tap-pulse');
+        nftClicker.offsetHeight;
+        nftClicker.classList.add('pvp-duel-tap-pulse');
+        setTimeout(function() { if (nftClicker) nftClicker.classList.remove('pvp-duel-tap-pulse'); }, 120);
+      }
     });
 
     document.getElementById('death-revive-btn') && document.getElementById('death-revive-btn').addEventListener('click', function() {
@@ -1615,6 +1732,7 @@
         if (boost === 'turboAutoclicker' && hasAutoclicker && !hasTurboAutoclicker) { tokens -= cost; hasTurboAutoclicker = true; restartAutoclicker(); }
         if (boost === 'cooldown' && !hasCooldownBoost) { tokens -= cost; hasCooldownBoost = true; }
         if (boost === 'superCooldown' && hasCooldownBoost && !hasSuperCooldownBoost) { tokens -= cost; hasSuperCooldownBoost = true; }
+        if (boost === 'powerCapacity' && !hasPowerCapacityBoost) { tokens -= cost; hasPowerCapacityBoost = true; }
         updateUI();
         save();
       });
@@ -1665,6 +1783,7 @@
         if (id === '10000total' && totalClicks >= 10000 && !claimed10000total) { claimed10000total = true; addTokens(reward); didClaim = true; }
         if (id === 'lucky777' && totalClicks >= 777 && !claimedLucky777) { claimedLucky777 = true; addTokens(reward); didClaim = true; }
         if (id === 'speeddemon' && localStorage.getItem('tokenClicker_speedDemon') === '1' && !claimedSpeedDemon) { claimedSpeedDemon = true; addTokens(reward); didClaim = true; }
+        if (id === 'clickmaster' && (localStorage.getItem('tokenClicker_clickMaster') === '1' || peakClicksPerSecond >= 5) && !claimedClickMaster) { claimedClickMaster = true; addTokens(reward); didClaim = true; }
         if (id === 'hoarder' && tokens >= 100 && !claimedHoarder) { claimedHoarder = true; addTokens(reward); didClaim = true; }
         if (didClaim) {
           save();
@@ -2568,11 +2687,12 @@
       var name = input && input.value.trim().slice(0, 20);
       if (name) { setPlayerName(name); hideWelcomeNameModal(); updateUI(); }
     });
-    document.getElementById('wallet-settings-open-btn') && document.getElementById('wallet-settings-open-btn').addEventListener('click', function() {
+    function openWalletSettingsModal() {
       if (typeof updateProfileDisplayName === 'function') updateProfileDisplayName();
       var modal = document.getElementById('wallet-settings-modal');
       if (modal) { modal.classList.remove('hidden'); modal.style.display = 'flex'; }
-    });
+    }
+    document.getElementById('header-settings-btn') && document.getElementById('header-settings-btn').addEventListener('click', openWalletSettingsModal);
     document.getElementById('wallet-settings-modal-close') && document.getElementById('wallet-settings-modal-close').addEventListener('click', function() {
       var modal = document.getElementById('wallet-settings-modal');
       if (modal) { modal.classList.add('hidden'); modal.style.display = 'none'; }
@@ -2678,6 +2798,29 @@
         localStorage.setItem('tokenClicker_pvp_guest_id', guest);
       }
       return guest;
+    }
+    var creatorRoomPollId = null;
+    var creatorRoomChannel = null;
+    function subscribeCreatorRoomAutoEnter(roomId) {
+      if (!roomId) return;
+      var supabase = window.supabaseClient;
+      if (!supabase) return;
+      function doEnter() {
+        if (creatorRoomPollId) { clearInterval(creatorRoomPollId); creatorRoomPollId = null; }
+        if (creatorRoomChannel) { creatorRoomChannel.unsubscribe(); creatorRoomChannel = null; }
+        if (typeof enterDuel === 'function') enterDuel(roomId);
+      }
+      try {
+        creatorRoomChannel = supabase.channel('creator-room-' + roomId).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'id=eq.' + roomId }, function(payload) {
+          var room = payload.new;
+          if (room && room.status === 'in_progress') doEnter();
+        }).subscribe();
+      } catch (e) {}
+      creatorRoomPollId = setInterval(function() {
+        supabase.from('rooms').select('status').eq('id', roomId).single().then(function(r) {
+          if (r.data && r.data.status === 'in_progress') doEnter();
+        });
+      }, 2500);
     }
     function loadPvpRooms() {
       var list = document.getElementById('pvp-rooms-list');
@@ -2823,10 +2966,12 @@
         .then(function(r) {
           if (btn) btn.disabled = false;
           if (r.error) { if (errEl) { errEl.textContent = r.error.message || 'Failed to create room'; errEl.classList.remove('hidden'); } return; }
+          var roomId = r.data.id;
           var status = document.getElementById('pvp-status');
-          if (status) { status.textContent = 'Room created! Share the link. When someone joins, the duel starts.'; status.className = 'text-[9px] text-neon-green mb-2 min-h-[14px]'; setTimeout(function() { status.textContent = ''; status.className = 'text-[9px] text-gray-500 mb-2 min-h-[14px]'; }, 4000); }
+          if (status) { status.textContent = 'Room created! Share the link. You will auto-enter when opponent joins.'; status.className = 'text-[9px] text-neon-green mb-2 min-h-[14px]'; setTimeout(function() { status.textContent = ''; status.className = 'text-[9px] text-gray-500 mb-2 min-h-[14px]'; }, 5000); }
           loadPvpRooms();
           if (errEl) errEl.classList.add('hidden');
+          if (typeof subscribeCreatorRoomAutoEnter === 'function') subscribeCreatorRoomAutoEnter(roomId);
         })
         .catch(function(e) {
           if (btn) btn.disabled = false;
@@ -2889,6 +3034,7 @@
           if (r.error) { if (errEl) { errEl.textContent = r.error.message || 'Could not join'; errEl.classList.remove('hidden'); } return; }
           loadPvpRooms();
           if (errEl) errEl.classList.add('hidden');
+          if (typeof clearPvpInvitedRoom === 'function') clearPvpInvitedRoom();
           enterDuel(roomId);
         })
         .catch(function(e) {
@@ -3004,7 +3150,10 @@
         document.getElementById('pvp-duel-opp-clicks').textContent = String(pvpDuelMyRole === 1 ? room.player2_clicks : room.player1_clicks);
         var endsAt = room.game_ends_at ? new Date(room.game_ends_at).getTime() : 0;
         if (!endsAt && room.status === 'in_progress') {
-          document.getElementById('pvp-duel-waiting').classList.remove('hidden');
+          var waitEl = document.getElementById('pvp-duel-waiting');
+          if (waitEl) waitEl.classList.remove('hidden');
+          var linkEl = document.getElementById('pvp-duel-room-link');
+          if (linkEl) linkEl.textContent = (getShareBaseUrl ? getShareBaseUrl() : window.location.href.split('?')[0]) + '?room=' + roomId;
         }
         startDuelTimer(endsAt);
         subscribeDuelRoom(roomId);
@@ -3303,22 +3452,116 @@
     });
     document.getElementById('pvp-invited-join-btn') && document.getElementById('pvp-invited-join-btn').addEventListener('click', function() {
       var roomId = window._pvpInvitedRoomId || new URLSearchParams(window.location.search).get('room');
-      if (roomId) joinPvpRoom(roomId);
+      if (roomId) { joinPvpRoom(roomId); window.location.hash = 'multiplayer'; showPage('multiplayer'); }
+    });
+    document.addEventListener('click', function(ev) {
+      if (ev.target && ev.target.closest && ev.target.closest('.pvp-invite-banner-join-btn')) {
+        var roomId = typeof getPvpInvitedRoomId === 'function' ? getPvpInvitedRoomId() : null;
+        if (roomId) { window.location.hash = 'multiplayer'; showPage('multiplayer'); if (typeof joinPvpRoom === 'function') joinPvpRoom(roomId); }
+      }
     });
     window.loadPvpRooms = loadPvpRooms;
 
     document.addEventListener('keydown', (e) => { if (e.key === 'Enter') e.preventDefault(); });
     setInterval(updateClicksPerSecond, 200);
+    setInterval(function() {
+      if (isDead) return;
+      var now = Date.now();
+      var elapsed = Math.min(500, now - lastPowerUpdateAt);
+      lastPowerUpdateAt = now;
+      var max = getPowerMax();
+      if (power < max) {
+        power = Math.min(max, power + powerRegenPerMs() * elapsed);
+        updatePowerBar();
+      }
+    }, 50);
 
     // Routing
     function getPageFromHash() {
       const hash = (window.location.hash || '#home').slice(1).toLowerCase();
       return hash === '' ? 'home' : hash;
     }
+    function getPvpInvitedRoomId() {
+      return window._pvpInvitedRoomId || (typeof URLSearchParams !== 'undefined' && new URLSearchParams(window.location.search).get('room')) || (function() { try { return sessionStorage.getItem('tokenClicker_pvpInvitedRoom'); } catch (e) { return null; } })() || null;
+    }
+    function checkActiveDuelInvite(roomId) {
+      var supabase = window.supabaseClient;
+      if (!supabase || !roomId) return Promise.resolve(false);
+      var testInvite = typeof URLSearchParams !== 'undefined' && new URLSearchParams(window.location.search).get('test_invite') === '1';
+      return supabase.from('rooms').select('status, player1_wallet, player2_wallet').eq('id', roomId).single()
+        .then(function(r) {
+          if (r.error || !r.data) return false;
+          var room = r.data;
+          if (room.status !== 'open') return false;
+          if (!testInvite) {
+            var me = typeof getPvpPlayerId === 'function' ? getPvpPlayerId() : '';
+            if (room.player1_wallet === me || room.player2_wallet === me) return false;
+          }
+          return true;
+        })
+        .catch(function() { return false; });
+    }
+    var pvpBannerRefreshId = null;
+    function updatePvpInviteBanner() {
+      var roomId = getPvpInvitedRoomId();
+      var banners = document.querySelectorAll('.pvp-invite-banner-inline');
+      var pageId = getPageFromHash();
+      var invitedCard = document.getElementById('pvp-invited-card');
+      function hideBanners() {
+        banners.forEach(function(b) { b.classList.add('hidden'); });
+      }
+      if (!roomId) {
+        if (pvpBannerRefreshId) { clearInterval(pvpBannerRefreshId); pvpBannerRefreshId = null; }
+        window._pvpInvitedRoomId = null;
+        try { sessionStorage.removeItem('tokenClicker_pvpInvitedRoom'); } catch (e) {}
+        hideBanners();
+        if (invitedCard) invitedCard.classList.add('hidden');
+        return;
+      }
+      window._pvpInvitedRoomId = roomId;
+      if (!pvpBannerRefreshId) {
+        pvpBannerRefreshId = setInterval(function() { if (getPvpInvitedRoomId()) updatePvpInviteBanner(); }, 30000);
+      }
+      checkActiveDuelInvite(roomId).then(function(isActive) {
+        if (!isActive) {
+          if (pvpBannerRefreshId) { clearInterval(pvpBannerRefreshId); pvpBannerRefreshId = null; }
+          if (typeof clearPvpInvitedRoom === 'function') clearPvpInvitedRoom();
+          hideBanners();
+          if (invitedCard) invitedCard.classList.add('hidden');
+          return;
+        }
+        if (pageId === 'boosts' || pageId === 'bounties' || pageId === 'wallet') {
+          banners.forEach(function(b) {
+            var section = b.closest('section');
+            var show = section && section.id === 'page-' + pageId;
+            b.classList.toggle('hidden', !show);
+          });
+        } else {
+          hideBanners();
+        }
+        if (invitedCard) {
+          if (pageId === 'multiplayer') {
+            invitedCard.classList.remove('hidden');
+            var roomIdEl = document.getElementById('pvp-invited-room-id');
+            if (roomIdEl) roomIdEl.textContent = 'Room: ' + roomId.slice(0, 8) + '…';
+          } else {
+            invitedCard.classList.add('hidden');
+          }
+        }
+      }).catch(function() { hideBanners(); if (invitedCard) invitedCard.classList.add('hidden'); });
+    }
+    function clearPvpInvitedRoom() {
+      window._pvpInvitedRoomId = null;
+      try { sessionStorage.removeItem('tokenClicker_pvpInvitedRoom'); } catch (e) {}
+      updatePvpInviteBanner();
+      var invitedCard = document.getElementById('pvp-invited-card');
+      if (invitedCard) invitedCard.classList.add('hidden');
+    }
     function showPage(pageId) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       const el = document.getElementById('page-' + pageId);
       if (el) el.classList.add('active');
+      updatePvpInviteBanner();
       if (pageId === 'home' && typeof updateUI === 'function') updateUI();
       if (pageId === 'friends') {
         startFriendsTokenPolling();
@@ -3342,8 +3585,6 @@
       if (pageId === 'multiplayer') {
         if (typeof loadLeaderboardPvp === 'function') loadLeaderboardPvp();
         if (typeof window.loadPvpRooms === 'function') window.loadPvpRooms();
-        var invitedCard = document.getElementById('pvp-invited-card');
-        if (invitedCard) invitedCard.classList.add('hidden');
         try {
           if (sessionStorage.getItem('tokenClicker_startVsComputer') === '1') {
             sessionStorage.removeItem('tokenClicker_startVsComputer');
@@ -3431,7 +3672,9 @@
       if (refParam) localStorage.setItem('tokenClicker_invitedBy', refParam);
       if (params.get('room')) {
         window._pvpInvitedRoomId = params.get('room');
+        try { sessionStorage.setItem('tokenClicker_pvpInvitedRoom', params.get('room')); } catch (e) {}
       }
+      updatePvpInviteBanner();
       showPage(getPageFromHash());
       updateUI();
       if (typeof loadFriendsInvited === 'function') loadFriendsInvited();
