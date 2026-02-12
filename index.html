@@ -2185,6 +2185,12 @@
       if (byRefCode) Object.keys(byRefCode).forEach(function(k) { c.byRefCode[k.toUpperCase()] = byRefCode[k]; });
       setFriendTokenCache(c);
     }
+    function removeFromFriendTokenCache(wallet, refCode) {
+      var c = getFriendTokenCache();
+      if (wallet) delete c.byWallet[wallet];
+      if (refCode) delete c.byRefCode[(refCode || '').toUpperCase()];
+      setFriendTokenCache(c);
+    }
     var friendsLeaderboardChannel = null;
     function subscribeFriendsLeaderboardRealtime() {
       var supabase = window.supabaseClient;
@@ -2272,11 +2278,11 @@
             var wallet = (e.invited_wallet || '').trim();
             var walletShort = wallet ? (wallet.slice(0, 6) + '…') : '';
             var tokens = tokensByWallet[wallet] != null ? tokensByWallet[wallet] : null;
-            var tokenStr = tokens != null ? ' — ' + tokens + ' tokens' : '';
+            var tokenStr = tokens != null ? '<span class="text-neon-yellow text-[10px] font-bold">' + tokens + ' tokens</span>' : '';
             var nameEsc = (name || '').replace(/"/g, '&quot;');
             var walletEsc = (wallet || '').replace(/"/g, '&quot;');
             return '<li class="flex flex-wrap items-center gap-2 py-1 border-b border-gray-700/50 last:border-0">' +
-              '<span class="flex-1 min-w-0">' + (i + 1) + '. ' + name + (walletShort ? ' (' + walletShort + ')' : '') + tokenStr + '</span>' +
+              '<span class="flex-1 min-w-0">' + (i + 1) + '. ' + name + (walletShort ? ' (' + walletShort + ')' : '') + (tokenStr ? '<span class="block mt-0.5">' + tokenStr + '</span>' : '') + '</span>' +
               '<span class="flex gap-1 shrink-0">' +
               '<button type="button" class="invited-duel-btn py-1 px-2 border border-neon-green text-neon-green rounded text-[9px] hover:bg-neon-green/10" data-name="' + nameEsc + '" data-wallet="' + walletEsc + '">DUEL</button>' +
               '<button type="button" class="invited-remove-btn py-1 px-2 border border-neon-pink text-neon-pink rounded text-[9px] hover:bg-neon-pink/10" data-name="' + nameEsc + '" data-wallet="' + walletEsc + '">REMOVE</button>' +
@@ -2288,8 +2294,11 @@
               var name = btn.getAttribute('data-name') || 'this friend';
               if (!confirm('Do you want to remove ' + name + '?')) return;
               var wallet = btn.getAttribute('data-wallet') || '';
-              supabase.from('referrals').delete().eq('inviter_ref_code', refCode).eq('invited_wallet', wallet).then(function(res) {
+              var q = supabase.from('referrals').delete().eq('inviter_ref_code', refCode);
+              if (wallet) q = q.eq('invited_wallet', wallet); else q = q.is('invited_wallet', null);
+              q.then(function(res) {
                 if (res.error) return;
+                if (typeof removeFromFriendTokenCache === 'function') removeFromFriendTokenCache(wallet, null);
                 if (typeof loadFriendsInvited === 'function') loadFriendsInvited();
               });
             });
@@ -2380,9 +2389,9 @@
             var code = (e.friend_ref_code || '').replace(/"/g, '&quot;');
             var codeUpper = (e.friend_ref_code || '').trim().toUpperCase();
             var tokens = tokensByCode[codeUpper] != null ? tokensByCode[codeUpper] : null;
-            var tokenStr = tokens != null ? ' — ' + tokens + ' tokens' : '';
+            var tokenStr = tokens != null ? '<span class="text-neon-yellow text-[10px] font-bold">' + tokens + ' tokens</span>' : '';
             return '<li class="flex flex-wrap items-center gap-2 py-1 border-b border-gray-700/50 last:border-0">' +
-              '<span class="flex-1 min-w-0">' + (i + 1) + '. ' + (e.friend_name || e.friend_ref_code || 'Friend') + tokenStr + '</span>' +
+              '<span class="flex-1 min-w-0">' + (i + 1) + '. ' + (e.friend_name || e.friend_ref_code || 'Friend') + (tokenStr ? '<span class="block mt-0.5">' + tokenStr + '</span>' : '') + '</span>' +
               '<span class="flex gap-1 shrink-0">' +
               '<button type="button" class="friend-duel-btn py-1 px-2 border border-neon-green text-neon-green rounded text-[9px] hover:bg-neon-green/10" data-name="' + name + '" data-ref="' + code + '">DUEL</button>' +
               '<button type="button" class="friend-remove-btn py-1 px-2 border border-neon-pink text-neon-pink rounded text-[9px] hover:bg-neon-pink/10" data-name="' + name + '" data-ref="' + code + '">REMOVE</button>' +
@@ -2396,6 +2405,7 @@
               if (!ref) return;
               supabase.from('friends_by_code').delete().eq('user_wallet', me).eq('friend_ref_code', ref).then(function(res) {
                 if (res.error) return;
+                if (typeof removeFromFriendTokenCache === 'function') removeFromFriendTokenCache(null, ref);
                 if (typeof loadFriendsAddedByCode === 'function') loadFriendsAddedByCode();
               });
             });
