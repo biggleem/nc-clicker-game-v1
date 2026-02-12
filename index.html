@@ -86,6 +86,7 @@
     @keyframes pvpTapPulse { 0% { transform: scale(1); } 40% { transform: scale(0.9); } 100% { transform: scale(1); } }
     .nft-clicker:active { transform: scale(0.97); }
     .nft-clicker.cooldown { opacity: 0.7; pointer-events: none; }
+    .nft-clicker.bird-dead { opacity: 0.5; filter: grayscale(0.8); }
     .image-pixel { image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges; }
     /* Bounties: square colored cards + bird card */
     .bounty-row { position: relative; border-radius: 8px; border: 2px solid; }
@@ -257,13 +258,25 @@
   <!-- Rising stars layer (behind app) -->
   <div class="stars-layer" id="stars-layer" aria-hidden="true"></div>
 
-  <!-- Loading screen: cardinal + START TAPPING (shown only first visit per session) -->
-  <div class="splash-screen hidden" id="splash" style="position:fixed; inset:0; z-index:9999; background:#0a0a0a; display:flex; align-items:center; justify-content:center; padding:20px;">
-    <div class="splash-card" style="background:#0a0a0a; border-radius:24px; padding:32px 24px; max-width:380px; width:100%; text-align:center; border:2px solid rgba(255,200,50,0.6);">
-      <div class="splash-title" style="color:#FFD700; font-size:10px; margin-bottom:16px;">🔴 1N BLOCKCHAIN</div>
-      <img src="assets/cardinal.png" alt="Cardinal" class="splash-cardinal image-pixel" style="width:160px; height:auto; margin:16px auto; display:block;" onerror="this.style.display='none'" />
-      <p class="splash-text">Tap the Cardinal to earn tokens! Build the community one tap at a time!</p>
-      <button type="button" class="splash-btn" id="splash-start">START TAPPING!</button>
+  <!-- Onboarding: multi-step intro for new users (first visit only) -->
+  <div id="onboarding-overlay" class="hidden" style="position:fixed;inset:0;z-index:9999;background:#0a0a0a;display:none;align-items:center;justify-content:center;padding:20px;">
+    <button type="button" id="onboarding-skip" class="absolute top-4 right-4 text-gray-500 text-[8px] hover:text-gray-300 py-1 px-2 z-10">Skip intro</button>
+    <div class="onboarding-card bg-black border-2 border-neon-cyan rounded-xl p-6 max-w-sm w-full text-center relative" style="box-shadow:0 0 40px rgba(0,255,247,0.3);">
+      <div id="onboarding-step" class="step">
+        <!-- Step content injected by JS -->
+      </div>
+      <div class="flex justify-between items-center mt-6 gap-3">
+        <button type="button" id="onboarding-back" class="py-2 px-4 border-2 border-gray-500 text-gray-400 rounded text-[10px] hover:bg-gray-700 hidden">BACK</button>
+        <div class="flex-1"></div>
+        <button type="button" id="onboarding-next" class="py-2 px-5 border-2 border-neon-cyan text-neon-cyan rounded text-[10px] hover:bg-neon-cyan/10 font-bold">NEXT</button>
+      </div>
+      <div class="flex justify-center gap-1.5 mt-3">
+        <span class="onboarding-dot w-2 h-2 rounded-full bg-gray-600" data-step="0"></span>
+        <span class="onboarding-dot w-2 h-2 rounded-full bg-gray-600" data-step="1"></span>
+        <span class="onboarding-dot w-2 h-2 rounded-full bg-gray-600" data-step="2"></span>
+        <span class="onboarding-dot w-2 h-2 rounded-full bg-gray-600" data-step="3"></span>
+        <span class="onboarding-dot w-2 h-2 rounded-full bg-gray-600" data-step="4"></span>
+      </div>
     </div>
   </div>
 
@@ -328,7 +341,48 @@
         <button type="button" id="ton-check-connection-btn" class="w-full mt-2 py-2 border-2 border-neon-green text-neon-green rounded text-[10px] hover:bg-neon-green/10 font-bold">I APPROVED – CHECK CONNECTION</button>
         <p class="text-neon-yellow text-[8px] mt-2">On desktop localhost: run the backend or use the <a href="https://biggleem.github.io/nc-clicker-game-v1" target="_blank" rel="noopener" class="underline">live site</a>.</p>
       </div>
+      <div class="mt-4 pt-3 border-t border-gray-700">
+        <p class="text-neon-yellow text-[10px] font-bold mb-2">LEVELS & DEATH RULES</p>
+        <p class="text-gray-400 text-[9px] mb-1">Levels (by total taps):</p>
+        <ul class="text-gray-500 text-[8px] mb-2 space-y-0.5 list-none">
+          <li>🥚 Egg: 0</li>
+          <li>🐣 Chick Lv.1–5: 1–199, 200–399, 400–599, 600–799, 800–999</li>
+          <li>🐦 Adult Lv.1–5: 1,000–1,199 … 1,800–1,999</li>
+          <li>🏅 Elite Lv.1–5: 2,000–2,199 … 2,800–2,999</li>
+          <li>🏆 Legend Lv.1–5: 3,000+</li>
+        </ul>
+        <p class="text-gray-400 text-[9px] mb-1">Death: If away &gt; 48 hours, your bird dies 🕊️</p>
+        <p class="text-gray-400 text-[9px] mb-1">Revive: Pay tokens (20 or 10% of balance, min 10) to revive.</p>
+      </div>
+      <button type="button" id="wallet-settings-replay-intro" class="mt-2 w-full py-2 border-2 border-gray-600 text-gray-400 rounded text-[9px] hover:bg-gray-700">REPLAY INTRO</button>
       <button type="button" id="wallet-settings-modal-close" class="mt-4 w-full py-2 border-2 border-gray-500 text-gray-400 rounded text-[10px] hover:bg-gray-700">CLOSE</button>
+    </div>
+  </div>
+  <!-- Wallet: no wallet / connect help – Back to game or open install in new tab -->
+  <div id="wallet-connect-help-modal" class="hidden" style="position:fixed;inset:0;z-index:10002;background:rgba(0,0,0,0.95);display:none;align-items:center;justify-content:center;padding:20px;">
+    <div class="bg-pixel-panel border-2 border-neon-cyan rounded-lg p-4 max-w-sm w-full text-center">
+      <p class="text-neon-cyan text-[10px] font-bold mb-2">CONNECT WALLET</p>
+      <p class="text-gray-300 text-[9px] mb-3">Don't have Tonkeeper? Install or sign in opens in a new tab so you can keep playing here.</p>
+      <div class="flex flex-col gap-2">
+        <a id="wallet-help-download-link" href="https://tonkeeper.com" target="_blank" rel="noopener noreferrer" class="py-2 px-4 border-2 border-neon-cyan text-neon-cyan rounded text-[10px] hover:bg-neon-cyan/10">DOWNLOAD TONKEEPER (NEW TAB)</a>
+        <button type="button" id="wallet-help-back-btn" class="py-2 px-4 border-2 border-gray-500 text-gray-400 rounded text-[10px] hover:bg-gray-700">BACK TO GAME</button>
+      </div>
+    </div>
+  </div>
+  <!-- Death modal: bird died from inactivity, revive with tokens -->
+  <div id="death-modal" class="hidden" style="position:fixed;inset:0;z-index:10003;background:rgba(0,0,0,0.95);display:none;align-items:center;justify-content:center;padding:20px;">
+    <div class="bg-pixel-panel border-2 border-gray-600 rounded-lg p-6 max-w-sm w-full text-center">
+      <p class="text-4xl mb-2">🕊️</p>
+      <p class="text-neon-yellow text-[10px] font-bold mb-2">YOUR BIRD DIED</p>
+      <p class="text-gray-500 text-[8px] mb-1">Deaths: <span id="death-count">0</span></p>
+      <p class="text-gray-300 text-[9px] mb-3">You were away too long. Use tokens to revive and keep playing.</p>
+      <p id="death-revive-cost" class="text-neon-cyan text-[10px] mb-3">Revive cost: 20 tokens</p>
+      <p id="death-balance" class="text-gray-500 text-[9px] mb-3">Your balance: 0 tokens</p>
+      <div class="flex gap-2 justify-center flex-wrap">
+        <button type="button" id="death-revive-btn" class="py-2 px-5 border-2 border-neon-green text-neon-green rounded text-[10px] hover:bg-neon-green/10 font-bold disabled:opacity-50 disabled:cursor-not-allowed">REVIVE</button>
+        <a href="#bounties" id="death-earn-tokens" class="py-2 px-5 border-2 border-gray-500 text-gray-400 rounded text-[10px] hover:bg-gray-700">EARN TOKENS</a>
+      </div>
+      <p class="text-gray-600 text-[8px] mt-2">Rules in Wallet → Settings</p>
     </div>
   </div>
   <!-- PVP Onboarding: name + enough in-game tokens for wager -->
@@ -391,17 +445,17 @@
           <button
             type="button"
             id="nft-clicker"
-            class="nft-clicker w-40 h-40 md:w-52 md:h-52 pixel-border rounded-lg bg-black/80 focus:outline-none focus:ring-2 focus:ring-neon-cyan overflow-hidden"
+            class="nft-clicker w-40 h-40 md:w-52 md:h-52 pixel-border rounded-lg bg-black/80 focus:outline-none focus:ring-2 focus:ring-neon-cyan overflow-hidden relative"
             aria-label="Click to earn tokens"
           >
             <img src="assets/cardinal.png" alt="NFT Cardinal" class="w-full h-full object-contain image-pixel" />
+            <span id="bird-level-badge" class="absolute bottom-1 right-1 flex items-center gap-0.5 bg-black/80 rounded px-1 border border-gray-600" title="Level"><span class="text-base">🥚</span><span class="text-[8px] text-gray-400">Egg</span></span>
           </button>
         </div>
       </div>
       <p class="text-center text-gray-500 mt-4 home-center-text">Every 10 clicks = 1 token</p>
       <!-- Stats bar (match reference) -->
       <div class="mt-4 bg-pixel-panel border-2 border-gray-700 rounded px-3 py-2 home-center-text flex flex-wrap justify-center gap-x-4 gap-y-1">
-        <span>Taps: <span id="home-taps" class="text-neon-yellow">0</span></span>
         <span>Tap Power: <span id="home-power" class="text-neon-yellow">1</span>x</span>
         <span>Multiplier: <span id="home-mult" class="text-neon-yellow">1.0</span>x</span>
         <span>Regen: <span id="home-regen" class="text-neon-yellow">1</span>/s</span>
@@ -458,6 +512,17 @@
           <button type="button" id="buy-cooldown" class="boost-btn border-2 border-neon-cyan text-neon-cyan px-3 py-1 rounded text-[10px] hover:bg-neon-cyan/10 disabled:opacity-50 disabled:cursor-not-allowed" data-cost="75" data-boost="cooldown">BUY</button>
         </div>
       </div>
+      <!-- Badges (same as Home; shown when boosts activated) -->
+      <div class="mt-4 p-3 bg-black border-2 border-gray-700 rounded">
+        <div class="text-gray-500 text-[9px] mb-2">🏆 BADGES</div>
+        <div class="flex justify-center gap-2 flex-wrap">
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel" id="badge-boost-1" title="First Click">👆</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-boost-2" title="7-Day Streak">🔥</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-boost-3" title="30-Day Streak">💎</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-boost-4" title="1K Clicks">🎯</div>
+          <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-boost-5" title="10K Clicks">🚀</div>
+        </div>
+      </div>
       <p class="text-gray-500 mt-4 text-[10px]">Your balance: <span id="boosts-balance" class="neon-text-cyan">0</span> tokens</p>
     </section>
 
@@ -475,55 +540,78 @@
           <div class="bounty-category-title">Daily Bounties</div>
           <div class="space-y-3">
         <div id="bounty-daily" class="bounty-row bounty-card-yellow p-3 flex flex-wrap justify-between items-center gap-2" data-bounty-id="daily" data-bounty-name="Daily login" data-bounty-reward="5">
-          <div><div>Daily login</div><div class="text-neon-yellow text-[10px]">Claim: 5 tokens</div></div>
-          <button type="button" id="claim-daily" class="bounty-claim border-2 border-neon-green text-neon-green px-3 py-1 rounded text-[10px] hover:bg-neon-green/10 disabled:opacity-50" data-id="daily" data-reward="5">CLAIM</button>
-          <div class="bounty-bird-card bird-yellow"><img src="assets/cardinal.png" alt="" /></div>
+          <div class="flex-1 min-w-0"><div>Daily login</div><div class="text-neon-yellow text-[10px]">Claim: 5 tokens</div></div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="bounty-bird-card bird-yellow"><img src="assets/cardinal.png" alt="" /></div>
+            <button type="button" id="claim-daily" class="bounty-claim border-2 border-neon-green text-neon-green px-3 py-1 rounded text-[10px] hover:bg-neon-green/10 disabled:opacity-50" data-id="daily" data-reward="5">CLAIM</button>
+          </div>
         </div>
         <div id="bounty-50today" class="bounty-row bounty-card-green p-3 flex flex-wrap justify-between items-center gap-2" data-bounty-id="50today" data-bounty-name="50 taps today" data-bounty-reward="5">
-          <div><div>50 taps today</div><div class="text-[10px]">Progress: <span id="bounty-50-progress">0</span>/50 · Reward: 5 tokens</div></div>
-          <button type="button" id="claim-50" class="bounty-claim border-2 border-neon-green text-neon-green px-3 py-1 rounded text-[10px] hover:bg-neon-green/10 disabled:opacity-50" data-id="50today" data-reward="5">CLAIM</button>
-          <div class="bounty-bird-card bird-green"><img src="assets/cardinal.png" alt="" /></div>
+          <div class="flex-1 min-w-0"><div>50 taps today</div><div class="text-[10px]">Progress: <span id="bounty-50-progress">0</span>/50 · Reward: 5 tokens</div></div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="bounty-bird-card bird-green"><img src="assets/cardinal.png" alt="" /></div>
+            <button type="button" id="claim-50" class="bounty-claim border-2 border-neon-green text-neon-green px-3 py-1 rounded text-[10px] hover:bg-neon-green/10 disabled:opacity-50" data-id="50today" data-reward="5">CLAIM</button>
+          </div>
         </div>
         <div id="bounty-100" class="bounty-row bounty-card-green p-3 flex flex-wrap justify-between items-center gap-2" data-bounty-id="100today" data-bounty-name="100 clicks today" data-bounty-reward="10">
-          <div><div>100 clicks today</div><div class="text-[10px]">Progress: <span id="bounty-100-progress">0</span>/100 · Reward: 10 tokens</div></div>
-          <button type="button" id="claim-100" class="bounty-claim border-2 border-neon-green text-neon-green px-3 py-1 rounded text-[10px] hover:bg-neon-green/10 disabled:opacity-50" data-id="100today" data-reward="10">CLAIM</button>
-          <div class="bounty-bird-card bird-green"><img src="assets/cardinal.png" alt="" /></div>
+          <div class="flex-1 min-w-0"><div>100 clicks today</div><div class="text-[10px]">Progress: <span id="bounty-100-progress">0</span>/100 · Reward: 10 tokens</div></div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="bounty-bird-card bird-green"><img src="assets/cardinal.png" alt="" /></div>
+            <button type="button" id="claim-100" class="bounty-claim border-2 border-neon-green text-neon-green px-3 py-1 rounded text-[10px] hover:bg-neon-green/10 disabled:opacity-50" data-id="100today" data-reward="10">CLAIM</button>
+          </div>
         </div>
         <div id="bounty-weekly" class="bounty-row bounty-card-green p-3 flex flex-wrap justify-between items-center gap-2" data-bounty-id="weekly" data-bounty-name="Weekly 500" data-bounty-reward="50">
-          <div><div>Weekly: 500 clicks</div><div class="text-[10px]">Progress: <span id="bounty-weekly-progress">0</span>/500 · Reward: 50 tokens</div></div>
-          <button type="button" id="claim-weekly" class="bounty-claim border-2 border-neon-green text-neon-green px-3 py-1 rounded text-[10px] hover:bg-neon-green/10 disabled:opacity-50" data-id="weekly" data-reward="50">CLAIM</button>
-          <div class="bounty-bird-card bird-green"><img src="assets/cardinal.png" alt="" /></div>
+          <div class="flex-1 min-w-0"><div>Weekly: 500 clicks</div><div class="text-[10px]">Progress: <span id="bounty-weekly-progress">0</span>/500 · Reward: 50 tokens</div></div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="bounty-bird-card bird-green"><img src="assets/cardinal.png" alt="" /></div>
+            <button type="button" id="claim-weekly" class="bounty-claim border-2 border-neon-green text-neon-green px-3 py-1 rounded text-[10px] hover:bg-neon-green/10 disabled:opacity-50" data-id="weekly" data-reward="50">CLAIM</button>
+          </div>
         </div>
           </div>
         </div>
         <!-- Graduating Bounties -->
         <div class="bounty-category">
           <div class="bounty-category-title">Graduating Bounties</div>
+          <div id="graduating-bounty-bar" class="mb-3 p-3 bg-black border-2 border-neon-green/50 rounded text-[9px]">
+            <div class="text-neon-green font-bold mb-1">ACTIVE & NEXT BOUNTY</div>
+            <div id="grad-current" class="text-gray-300">Active: 500 taps — 0/500 · 15 tokens</div>
+            <div id="grad-next" class="text-gray-500">Next: 1,000 taps — 0/1,000 · 25 tokens</div>
+          </div>
           <div class="space-y-3">
         <div id="bounty-500" class="bounty-row bounty-card-green p-3 flex flex-wrap justify-between items-center gap-2" data-bounty-id="500total" data-bounty-name="500 taps" data-bounty-reward="15">
-          <div><div>500 total taps</div><div class="text-[10px]">Progress: <span id="bounty-500-progress">0</span>/500 · Reward: 15 tokens</div></div>
-          <button type="button" id="claim-500" class="bounty-claim border-2 border-neon-green text-neon-green px-3 py-1 rounded text-[10px] hover:bg-neon-green/10 disabled:opacity-50" data-id="500total" data-reward="15">CLAIM</button>
-          <div class="bounty-bird-card bird-green"><img src="assets/cardinal.png" alt="" /></div>
+          <div class="flex-1 min-w-0"><div>500 total taps</div><div class="text-[10px]">Progress: <span id="bounty-500-progress">0</span>/500 · Reward: 15 tokens</div></div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="bounty-bird-card bird-green"><img src="assets/cardinal.png" alt="" /></div>
+            <button type="button" id="claim-500" class="bounty-claim border-2 border-neon-green text-neon-green px-3 py-1 rounded text-[10px] hover:bg-neon-green/10 disabled:opacity-50" data-id="500total" data-reward="15">CLAIM</button>
+          </div>
         </div>
         <div id="bounty-1000" class="bounty-row bounty-card-green p-3 flex flex-wrap justify-between items-center gap-2" data-bounty-id="1000total" data-bounty-name="1,000 taps" data-bounty-reward="25">
-          <div><div>1,000 total taps</div><div class="text-[10px]">Progress: <span id="bounty-1000-progress">0</span>/1,000 · Reward: 25 tokens</div></div>
-          <button type="button" id="claim-1000" class="bounty-claim border-2 border-neon-green text-neon-green px-3 py-1 rounded text-[10px] hover:bg-neon-green/10 disabled:opacity-50" data-id="1000total" data-reward="25">CLAIM</button>
-          <div class="bounty-bird-card bird-green"><img src="assets/cardinal.png" alt="" /></div>
+          <div class="flex-1 min-w-0"><div>1,000 total taps</div><div class="text-[10px]">Progress: <span id="bounty-1000-progress">0</span>/1,000 · Reward: 25 tokens</div></div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="bounty-bird-card bird-green"><img src="assets/cardinal.png" alt="" /></div>
+            <button type="button" id="claim-1000" class="bounty-claim border-2 border-neon-green text-neon-green px-3 py-1 rounded text-[10px] hover:bg-neon-green/10 disabled:opacity-50" data-id="1000total" data-reward="25">CLAIM</button>
+          </div>
         </div>
         <div id="bounty-2500" class="bounty-row bounty-card-green p-3 flex flex-wrap justify-between items-center gap-2" data-bounty-id="2500total" data-bounty-name="2,500 taps" data-bounty-reward="50">
-          <div><div>2,500 total taps</div><div class="text-[10px]">Progress: <span id="bounty-2500-progress">0</span>/2,500 · Reward: 50 tokens</div></div>
-          <button type="button" id="claim-2500" class="bounty-claim border-2 border-neon-green text-neon-green px-3 py-1 rounded text-[10px] hover:bg-neon-green/10 disabled:opacity-50" data-id="2500total" data-reward="50">CLAIM</button>
-          <div class="bounty-bird-card bird-green"><img src="assets/cardinal.png" alt="" /></div>
+          <div class="flex-1 min-w-0"><div>2,500 total taps</div><div class="text-[10px]">Progress: <span id="bounty-2500-progress">0</span>/2,500 · Reward: 50 tokens</div></div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="bounty-bird-card bird-green"><img src="assets/cardinal.png" alt="" /></div>
+            <button type="button" id="claim-2500" class="bounty-claim border-2 border-neon-green text-neon-green px-3 py-1 rounded text-[10px] hover:bg-neon-green/10 disabled:opacity-50" data-id="2500total" data-reward="50">CLAIM</button>
+          </div>
         </div>
         <div id="bounty-5000" class="bounty-row bounty-card-green p-3 flex flex-wrap justify-between items-center gap-2" data-bounty-id="5000total" data-bounty-name="5,000 taps" data-bounty-reward="100">
-          <div><div>5,000 total taps</div><div class="text-[10px]">Progress: <span id="bounty-5000-progress">0</span>/5,000 · Reward: 100 tokens</div></div>
-          <button type="button" id="claim-5000" class="bounty-claim border-2 border-neon-green text-neon-green px-3 py-1 rounded text-[10px] hover:bg-neon-green/10 disabled:opacity-50" data-id="5000total" data-reward="100">CLAIM</button>
-          <div class="bounty-bird-card bird-green"><img src="assets/cardinal.png" alt="" /></div>
+          <div class="flex-1 min-w-0"><div>5,000 total taps</div><div class="text-[10px]">Progress: <span id="bounty-5000-progress">0</span>/5,000 · Reward: 100 tokens</div></div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="bounty-bird-card bird-green"><img src="assets/cardinal.png" alt="" /></div>
+            <button type="button" id="claim-5000" class="bounty-claim border-2 border-neon-green text-neon-green px-3 py-1 rounded text-[10px] hover:bg-neon-green/10 disabled:opacity-50" data-id="5000total" data-reward="100">CLAIM</button>
+          </div>
         </div>
         <div id="bounty-10000" class="bounty-row bounty-card-green p-3 flex flex-wrap justify-between items-center gap-2" data-bounty-id="10000total" data-bounty-name="10,000 taps" data-bounty-reward="200">
-          <div><div>10,000 total taps</div><div class="text-[10px]">Progress: <span id="bounty-10000-progress">0</span>/10,000 · Reward: 200 tokens</div></div>
-          <button type="button" id="claim-10000" class="bounty-claim border-2 border-neon-green text-neon-green px-3 py-1 rounded text-[10px] hover:bg-neon-green/10 disabled:opacity-50" data-id="10000total" data-reward="200">CLAIM</button>
-          <div class="bounty-bird-card bird-green"><img src="assets/cardinal.png" alt="" /></div>
+          <div class="flex-1 min-w-0"><div>10,000 total taps</div><div class="text-[10px]">Progress: <span id="bounty-10000-progress">0</span>/10,000 · Reward: 200 tokens</div></div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="bounty-bird-card bird-green"><img src="assets/cardinal.png" alt="" /></div>
+            <button type="button" id="claim-10000" class="bounty-claim border-2 border-neon-green text-neon-green px-3 py-1 rounded text-[10px] hover:bg-neon-green/10 disabled:opacity-50" data-id="10000total" data-reward="200">CLAIM</button>
+          </div>
         </div>
           </div>
         </div>
@@ -532,29 +620,39 @@
           <div class="bounty-category-title">Fun Bounties</div>
           <div class="space-y-3">
         <div id="bounty-share" class="bounty-row bounty-card-cyan p-3 flex flex-wrap justify-between items-center gap-2" data-bounty-id="share" data-bounty-name="Share the game" data-bounty-reward="15">
-          <div><div>Share the game</div><div class="text-[10px]">Copy game or invite link once · Reward: 15 tokens</div></div>
-          <button type="button" id="claim-share" class="bounty-claim border-2 border-neon-cyan text-neon-cyan px-3 py-1 rounded text-[10px] hover:bg-neon-cyan/10 disabled:opacity-50" data-id="share" data-reward="15">CLAIM</button>
-          <div class="bounty-bird-card bird-cyan"><img src="assets/cardinal.png" alt="" /></div>
+          <div class="flex-1 min-w-0"><div>Share the game</div><div class="text-[10px]">Copy game or invite link once · Reward: 15 tokens</div></div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="bounty-bird-card bird-cyan"><img src="assets/cardinal.png" alt="" /></div>
+            <button type="button" id="claim-share" class="bounty-claim border-2 border-neon-cyan text-neon-cyan px-3 py-1 rounded text-[10px] hover:bg-neon-cyan/10 disabled:opacity-50" data-id="share" data-reward="15">CLAIM</button>
+          </div>
         </div>
         <div id="bounty-firstfriend" class="bounty-row bounty-card-pink p-3 flex flex-wrap justify-between items-center gap-2" data-bounty-id="firstfriend" data-bounty-name="First friend" data-bounty-reward="10">
-          <div><div>Add your first friend</div><div class="text-[10px]">Paste a friend's code or link · Reward: 10 tokens</div></div>
-          <button type="button" id="claim-firstfriend" class="bounty-claim border-2 border-neon-pink text-neon-pink px-3 py-1 rounded text-[10px] hover:bg-neon-pink/10 disabled:opacity-50" data-id="firstfriend" data-reward="10">CLAIM</button>
-          <div class="bounty-bird-card bird-pink"><img src="assets/cardinal.png" alt="" /></div>
+          <div class="flex-1 min-w-0"><div>Add your first friend</div><div class="text-[10px]">Paste a friend's code or link · Reward: 10 tokens</div></div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="bounty-bird-card bird-pink"><img src="assets/cardinal.png" alt="" /></div>
+            <button type="button" id="claim-firstfriend" class="bounty-claim border-2 border-neon-pink text-neon-pink px-3 py-1 rounded text-[10px] hover:bg-neon-pink/10 disabled:opacity-50" data-id="firstfriend" data-reward="10">CLAIM</button>
+          </div>
         </div>
         <div id="bounty-lucky7" class="bounty-row bounty-card-yellow p-3 flex flex-wrap justify-between items-center gap-2" data-bounty-id="lucky777" data-bounty-name="Lucky 777" data-bounty-reward="17">
-          <div><div>Lucky 777</div><div class="text-[10px]">Reach 777 total taps · Reward: 17 tokens</div></div>
-          <button type="button" id="claim-lucky7" class="bounty-claim border-2 border-neon-yellow text-neon-yellow px-3 py-1 rounded text-[10px] hover:bg-neon-yellow/10 disabled:opacity-50" data-id="lucky777" data-reward="17">CLAIM</button>
-          <div class="bounty-bird-card bird-yellow"><img src="assets/cardinal.png" alt="" /></div>
+          <div class="flex-1 min-w-0"><div>Lucky 777</div><div class="text-[10px]">Reach 777 total taps · Reward: 17 tokens</div></div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="bounty-bird-card bird-yellow"><img src="assets/cardinal.png" alt="" /></div>
+            <button type="button" id="claim-lucky7" class="bounty-claim border-2 border-neon-yellow text-neon-yellow px-3 py-1 rounded text-[10px] hover:bg-neon-yellow/10 disabled:opacity-50" data-id="lucky777" data-reward="17">CLAIM</button>
+          </div>
         </div>
         <div id="bounty-speed" class="bounty-row bounty-card-pink p-3 flex flex-wrap justify-between items-center gap-2" data-bounty-id="speeddemon" data-bounty-name="Speed demon" data-bounty-reward="20">
-          <div><div>Speed demon</div><div class="text-[10px]">Hit 8+ taps in one second · Reward: 20 tokens</div></div>
-          <button type="button" id="claim-speed" class="bounty-claim border-2 border-neon-pink text-neon-pink px-3 py-1 rounded text-[10px] hover:bg-neon-pink/10 disabled:opacity-50" data-id="speeddemon" data-reward="20">CLAIM</button>
-          <div class="bounty-bird-card bird-pink"><img src="assets/cardinal.png" alt="" /></div>
+          <div class="flex-1 min-w-0"><div>Speed demon</div><div class="text-[10px]">Hit 8+ taps in one second · Reward: 20 tokens</div></div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="bounty-bird-card bird-pink"><img src="assets/cardinal.png" alt="" /></div>
+            <button type="button" id="claim-speed" class="bounty-claim border-2 border-neon-pink text-neon-pink px-3 py-1 rounded text-[10px] hover:bg-neon-pink/10 disabled:opacity-50" data-id="speeddemon" data-reward="20">CLAIM</button>
+          </div>
         </div>
         <div id="bounty-hoarder" class="bounty-row bounty-card-cyan p-3 flex flex-wrap justify-between items-center gap-2" data-bounty-id="hoarder" data-bounty-name="Token hoarder" data-bounty-reward="25">
-          <div><div>Token hoarder</div><div class="text-[10px]">Reach 100 tokens balance · Reward: 25 tokens</div></div>
-          <button type="button" id="claim-hoarder" class="bounty-claim border-2 border-neon-cyan text-neon-cyan px-3 py-1 rounded text-[10px] hover:bg-neon-cyan/10 disabled:opacity-50" data-id="hoarder" data-reward="25">CLAIM</button>
-          <div class="bounty-bird-card bird-cyan"><img src="assets/cardinal.png" alt="" /></div>
+          <div class="flex-1 min-w-0"><div>Token hoarder</div><div class="text-[10px]">Reach 100 tokens balance · Reward: 25 tokens</div></div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="bounty-bird-card bird-cyan"><img src="assets/cardinal.png" alt="" /></div>
+            <button type="button" id="claim-hoarder" class="bounty-claim border-2 border-neon-cyan text-neon-cyan px-3 py-1 rounded text-[10px] hover:bg-neon-cyan/10 disabled:opacity-50" data-id="hoarder" data-reward="25">CLAIM</button>
+          </div>
         </div>
           </div>
         </div>
@@ -628,6 +726,7 @@
         <p id="wallet-file-warning" class="hidden text-neon-yellow text-[9px] mb-2 p-2 bg-black/50 rounded">Wallet needs the game opened from a URL. Run in project folder: <code class="text-[8px]">npx serve -p 3001</code> then open <code class="text-[8px]">http://localhost:3001</code></p>
         <div id="wallet-connect-area">
           <p id="wallet-connection-status" class="text-[9px] min-h-[14px] mb-2 text-gray-400"></p>
+          <p class="text-gray-500 text-[8px] mb-1">Opens in a new tab so you can stay in the game. Return here after approving.</p>
           <button type="button" id="ton-connect-btn" class="w-full py-2 border-2 border-neon-cyan text-neon-cyan rounded hover:bg-neon-cyan/10 text-[10px]">CONNECT WALLET (Tonkeeper / Telegram)</button>
           <p class="text-gray-500 text-[9px] mt-2">Need help? Open SETTINGS (top right) for instructions and I approved – check connection.</p>
           <p class="text-neon-yellow text-[9px] mt-1 hidden" id="wallet-localhost-hint">On desktop localhost: run the backend so the wallet can connect. Or use the <a href="https://biggleem.github.io/nc-clicker-game-v1" target="_blank" rel="noopener" class="underline">live site</a>.</p>
@@ -661,6 +760,14 @@
           <button type="button" id="withdraw-btn" class="border-2 border-neon-green text-neon-green px-3 py-2 rounded text-[10px] hover:bg-neon-green/10 disabled:opacity-50">WITHDRAW</button>
         </div>
         <p id="withdraw-feedback" class="text-[10px] mt-2 hidden"></p>
+      </div>
+      <!-- Backend / Admin (black square); shown when backendUrl is set -->
+      <div id="wallet-backend-square" class="bg-black border-2 border-gray-700 p-4 rounded mb-4 hidden">
+        <p class="text-gray-500 text-[9px] mb-2">BACKEND</p>
+        <div class="flex flex-wrap gap-2">
+          <a id="wallet-backend-link" href="#" target="_blank" rel="noopener noreferrer" class="py-2 px-3 border-2 border-gray-500 text-gray-400 rounded text-[9px] hover:bg-gray-800 hover:text-white">OPEN BACKEND</a>
+          <a id="wallet-admin-setup-link" href="#" target="_blank" rel="noopener noreferrer" class="py-2 px-3 border-2 border-gray-500 text-gray-400 rounded text-[9px] hover:bg-gray-800 hover:text-white">ADMIN SETUP</a>
+        </div>
       </div>
     </section>
 
@@ -793,6 +900,33 @@
     const CLICKS_PER_TOKEN = 10;
     const COOLDOWN_BASE_MS = 280;
     const COOLDOWN_REDUCED_MS = 200;
+    const DEATH_IDLE_HOURS = 48;
+    const REVIVE_BASE_COST = 20;
+    const REVIVE_PERCENT = 0.1;
+    const REVIVE_MIN = 10;
+    const BIRD_LEVELS = [
+      { taps: 0, emoji: '🥚', name: 'Egg' },
+      { taps: 1, emoji: '🐣', name: 'Chick Lv.1' },
+      { taps: 200, emoji: '🐣', name: 'Chick Lv.2' },
+      { taps: 400, emoji: '🐣', name: 'Chick Lv.3' },
+      { taps: 600, emoji: '🐤', name: 'Chick Lv.4' },
+      { taps: 800, emoji: '🐤', name: 'Chick Lv.5' },
+      { taps: 1000, emoji: '🐦', name: 'Adult Lv.1' },
+      { taps: 1200, emoji: '🐦', name: 'Adult Lv.2' },
+      { taps: 1400, emoji: '🐦', name: 'Adult Lv.3' },
+      { taps: 1600, emoji: '🐦', name: 'Adult Lv.4' },
+      { taps: 1800, emoji: '🐦', name: 'Adult Lv.5' },
+      { taps: 2000, emoji: '🏅', name: 'Elite Lv.1' },
+      { taps: 2200, emoji: '🏅', name: 'Elite Lv.2' },
+      { taps: 2400, emoji: '🏅', name: 'Elite Lv.3' },
+      { taps: 2600, emoji: '🏅', name: 'Elite Lv.4' },
+      { taps: 2800, emoji: '🏅', name: 'Elite Lv.5' },
+      { taps: 3000, emoji: '🏆', name: 'Legend Lv.1' },
+      { taps: 3200, emoji: '🏆', name: 'Legend Lv.2' },
+      { taps: 3400, emoji: '🏆', name: 'Legend Lv.3' },
+      { taps: 3600, emoji: '🏆', name: 'Legend Lv.4' },
+      { taps: 3800, emoji: '🏆', name: 'Legend Lv.5' }
+    ];
 
     // --- State (load from localStorage) ---
     let totalClicks = parseInt(localStorage.getItem('tokenClicker_totalClicks') || '0', 10);
@@ -820,6 +954,9 @@
     let clicksToday = parseInt(localStorage.getItem('tokenClicker_clicksToday') || '0', 10);
     let weekStartKey = localStorage.getItem('tokenClicker_weekStart') || '';
     let weeklyClicks = parseInt(localStorage.getItem('tokenClicker_weeklyClicks') || '0', 10);
+    let lastActivityAt = parseInt(localStorage.getItem('tokenClicker_lastActivityAt') || String(Date.now()), 10);
+    let isDead = localStorage.getItem('tokenClicker_isDead') === '1';
+    let deathCount = parseInt(localStorage.getItem('tokenClicker_deathCount') || '0', 10);
 
     let lastClickTime = 0;
     let clicksInLastSecond = 0;
@@ -871,6 +1008,39 @@
       localStorage.setItem('tokenClicker_clicksToday', String(clicksToday));
       localStorage.setItem('tokenClicker_weekStart', weekStartKey);
       localStorage.setItem('tokenClicker_weeklyClicks', String(weeklyClicks));
+      localStorage.setItem('tokenClicker_lastActivityAt', String(lastActivityAt));
+      localStorage.setItem('tokenClicker_isDead', isDead ? '1' : '0');
+      localStorage.setItem('tokenClicker_deathCount', String(deathCount));
+    }
+
+    function getBirdLevel(taps) {
+      let level = BIRD_LEVELS[0];
+      for (let i = BIRD_LEVELS.length - 1; i >= 0; i--) {
+        if (taps >= BIRD_LEVELS[i].taps) { level = BIRD_LEVELS[i]; break; }
+      }
+      return level;
+    }
+    function getReviveCost() {
+      const percentCost = Math.ceil(tokens * REVIVE_PERCENT);
+      return Math.max(REVIVE_MIN, Math.max(REVIVE_BASE_COST, percentCost));
+    }
+    function reviveBird() {
+      const cost = getReviveCost();
+      if (tokens < cost) return;
+      tokens -= cost;
+      isDead = false;
+      lastActivityAt = Date.now();
+      save();
+      updateUI();
+    }
+    function checkDeath() {
+      const idleMs = Date.now() - lastActivityAt;
+      const idleHours = idleMs / (1000 * 60 * 60);
+      if (idleHours >= DEATH_IDLE_HOURS && !isDead) {
+        isDead = true;
+        deathCount++;
+        save();
+      }
     }
 
     function getBountyClaimed(id) {
@@ -972,27 +1142,114 @@
       if (totalClicksEl) totalClicksEl.textContent = totalClicks;
       if (clickCountLabel) clickCountLabel.textContent = totalClicks;
       if (tokenRateEl) tokenRateEl.textContent = tapPower + ' / 10';
-      const homeTaps = document.getElementById('home-taps');
       const homePower = document.getElementById('home-power');
       const homeMult = document.getElementById('home-mult');
       const homeRegen = document.getElementById('home-regen');
-      if (homeTaps) homeTaps.textContent = totalClicks;
       if (homePower) homePower.textContent = tapPower;
       if (homeMult) homeMult.textContent = '1.0';
       if (homeRegen) homeRegen.textContent = hasAutoclicker ? '1' : '0';
       updateBadges();
       updateBoostsUI();
       updateBountiesUI();
+      updateGraduatingBountyBar();
       updateLeaderboard();
+      updateLevelBadge();
+      var dm = document.getElementById('death-modal');
+      var onHome = document.getElementById('page-home') && document.getElementById('page-home').classList.contains('active');
+      if (isDead && onHome) {
+        var costEl = document.getElementById('death-revive-cost');
+        var balEl = document.getElementById('death-balance');
+        var revBtn = document.getElementById('death-revive-btn');
+        if (dm) { dm.classList.remove('hidden'); dm.style.display = 'flex'; }
+        if (costEl) costEl.textContent = 'Revive cost: ' + getReviveCost() + ' tokens';
+        if (balEl) balEl.textContent = 'Your balance: ' + tokens + ' tokens';
+        if (revBtn) revBtn.disabled = tokens < getReviveCost();
+        var dcEl = document.getElementById('death-count');
+        if (dcEl) dcEl.textContent = deathCount;
+      } else {
+        if (dm) { dm.classList.add('hidden'); dm.style.display = 'none'; }
+      }
+    }
+    function updateLevelBadge() {
+      var badge = document.getElementById('bird-level-badge');
+      var clicker = document.getElementById('nft-clicker');
+      if (badge) {
+        if (isDead) {
+          badge.innerHTML = '<span class="text-base">🕊️</span><span class="text-[8px] text-gray-400">Dead</span>';
+          badge.title = 'Dead – revive with tokens';
+        } else {
+          var level = getBirdLevel(totalClicks);
+          badge.innerHTML = '<span class="text-base">' + level.emoji + '</span><span class="text-[8px] text-gray-400">' + level.name + '</span>';
+          badge.title = level.name + ' (' + totalClicks + ' taps)';
+        }
+      }
+      if (clicker) clicker.classList.toggle('bird-dead', isDead);
+    }
+
+    function updateGraduatingBountyBar() {
+      const GRADUATING = [
+        { id: '500total', target: 500, reward: 15, name: '500 taps' },
+        { id: '1000total', target: 1000, reward: 25, name: '1,000 taps' },
+        { id: '2500total', target: 2500, reward: 50, name: '2,500 taps' },
+        { id: '5000total', target: 5000, reward: 100, name: '5,000 taps' },
+        { id: '10000total', target: 10000, reward: 200, name: '10,000 taps' }
+      ];
+      const getClaimed = (id) => {
+        if (id === '500total') return claimed500total;
+        if (id === '1000total') return claimed1000total;
+        if (id === '2500total') return claimed2500total;
+        if (id === '5000total') return claimed5000total;
+        if (id === '10000total') return claimed10000total;
+        return false;
+      };
+      let current = null, next = null;
+      for (let i = 0; i < GRADUATING.length; i++) {
+        const g = GRADUATING[i];
+        if (!getClaimed(g.id)) {
+          if (!current) { current = g; next = GRADUATING[i + 1] || null; break; }
+        }
+      }
+      const curEl = document.getElementById('grad-current');
+      const nextEl = document.getElementById('grad-next');
+      if (curEl) {
+        if (current) {
+          const prog = Math.min(totalClicks, current.target);
+          curEl.textContent = 'Active: ' + current.name + ' — ' + prog + '/' + current.target.toLocaleString() + ' · ' + current.reward + ' tokens';
+          curEl.classList.remove('text-gray-500');
+          curEl.classList.add('text-gray-300');
+        } else {
+          curEl.textContent = 'All graduating bounties claimed!';
+          curEl.classList.add('text-neon-green');
+        }
+      }
+      if (nextEl) {
+        if (next) {
+          const prog = Math.min(totalClicks, next.target);
+          nextEl.textContent = 'Next: ' + next.name + ' — ' + prog + '/' + next.target.toLocaleString() + ' · ' + next.reward + ' tokens';
+          nextEl.classList.remove('hidden');
+        } else {
+          nextEl.textContent = '';
+          nextEl.classList.add('hidden');
+        }
+      }
     }
 
     function updateBadges() {
-      [['badge-1', totalClicks >= 1], ['badge-2', false], ['badge-3', false], ['badge-4', totalClicks >= 1000], ['badge-5', totalClicks >= 10000]].forEach(([id, unlocked]) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.classList.toggle('opacity-50', !unlocked);
-        el.classList.toggle('border-neon-yellow', !!unlocked);
-        el.classList.toggle('border-gray-600', !unlocked);
+      const pairs = [
+        [['badge-1', 'badge-boost-1'], totalClicks >= 1],
+        [['badge-2', 'badge-boost-2'], false],
+        [['badge-3', 'badge-boost-3'], false],
+        [['badge-4', 'badge-boost-4'], totalClicks >= 1000],
+        [['badge-5', 'badge-boost-5'], totalClicks >= 10000]
+      ];
+      pairs.forEach(([ids, unlocked]) => {
+        ids.forEach(id => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.classList.toggle('opacity-50', !unlocked);
+          el.classList.toggle('border-neon-yellow', !!unlocked);
+          el.classList.toggle('border-gray-600', !unlocked);
+        });
       });
     }
 
@@ -1159,9 +1416,11 @@
     }
 
     function onValidClick() {
+      if (isDead) return -1;
       const now = Date.now();
       if (now - lastClickTime < cooldownMs()) return -1;
       lastClickTime = now;
+      lastActivityAt = now;
 
       totalClicks++;
       const prevEffective = (totalClicks - 1) * tapPower;
@@ -1233,6 +1492,10 @@
       var earned = onValidClick();
       if (earned >= 0) spawnClickEffects(earned, e);
       setTimeout(function() { nftClicker.classList.remove('cooldown'); }, cooldownMs());
+    });
+
+    document.getElementById('death-revive-btn') && document.getElementById('death-revive-btn').addEventListener('click', function() {
+      reviveBird();
     });
 
     // Boosts: buy
@@ -1483,7 +1746,7 @@
     if (tonConnectBtn) {
       tonConnectBtn.addEventListener('click', function() {
         if (!window.TonWallet) { setWalletStatus('Wallet script not loaded.', true); return; }
-        setWalletStatus('Opening Tonkeeper…');
+        setWalletStatus('Opening in new tab… Stay here; return after approving.');
         tonConnectBtn.disabled = true;
         window.TonWallet.connect()
           .then(function() {
@@ -1497,8 +1760,22 @@
             if (msg.indexOf('POPUP_BLOCKED') !== -1) msg = 'Popup blocked. Allow popups for this site or use the link that opened.';
             setWalletStatus(msg, true);
             tonConnectBtn.disabled = false;
+            var helpModal = document.getElementById('wallet-connect-help-modal');
+            if (helpModal) {
+              helpModal.classList.remove('hidden');
+              helpModal.style.display = 'flex';
+            }
           });
       });
+    var walletHelpBackBtn = document.getElementById('wallet-help-back-btn');
+    var walletConnectHelpModal = document.getElementById('wallet-connect-help-modal');
+    if (walletHelpBackBtn && walletConnectHelpModal) {
+      walletHelpBackBtn.addEventListener('click', function() {
+        walletConnectHelpModal.classList.add('hidden');
+        walletConnectHelpModal.style.display = 'none';
+        setWalletStatus('');
+      });
+    }
     }
     const tonCheckBtn = document.getElementById('ton-check-connection-btn');
     if (tonCheckBtn && window.TonWallet) {
@@ -1591,6 +1868,15 @@
           if (hint) hint.textContent = data.cardMinterAddress ? 'Minter: ' + data.cardMinterAddress.slice(0, 8) + '…' : 'Set backendUrl in ton-config.js and add minter to backend .env';
         })
         .catch(() => {});
+    }
+    // Wallet: backend / admin links in black square (open in new tab)
+    var walletBackendSquare = document.getElementById('wallet-backend-square');
+    var walletBackendLink = document.getElementById('wallet-backend-link');
+    var walletAdminSetupLink = document.getElementById('wallet-admin-setup-link');
+    if (backendUrl) {
+      if (walletBackendSquare) walletBackendSquare.classList.remove('hidden');
+      if (walletBackendLink) walletBackendLink.href = backendUrl.replace(/\/$/, '');
+      if (walletAdminSetupLink) walletAdminSetupLink.href = backendUrl.replace(/\/$/, '') + '/setup';
     }
 
     // Withdraw: send in-game tokens to backend, backend mints $CARD to user
@@ -2005,6 +2291,15 @@
     document.getElementById('wallet-settings-modal-close') && document.getElementById('wallet-settings-modal-close').addEventListener('click', function() {
       var modal = document.getElementById('wallet-settings-modal');
       if (modal) { modal.classList.add('hidden'); modal.style.display = 'none'; }
+    });
+    document.getElementById('wallet-settings-replay-intro') && document.getElementById('wallet-settings-replay-intro').addEventListener('click', function() {
+      var modal = document.getElementById('wallet-settings-modal');
+      if (modal) { modal.classList.add('hidden'); modal.style.display = 'none'; }
+      try { localStorage.removeItem('tokenClicker_onboardingCompleted'); } catch (e) {}
+      var overlay = document.getElementById('onboarding-overlay');
+      if (overlay) { overlay.classList.remove('hidden'); overlay.style.display = 'flex'; }
+      if (app) app.classList.add('hidden');
+      showOnboardingStep(0);
     });
     document.getElementById('wallet-settings-btn') && document.getElementById('wallet-settings-btn').addEventListener('click', function() {
       var modal = document.getElementById('profile-name-modal');
@@ -2725,6 +3020,7 @@
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       const el = document.getElementById('page-' + pageId);
       if (el) el.classList.add('active');
+      if (pageId === 'home' && typeof updateUI === 'function') updateUI();
       document.querySelectorAll('.nav-link').forEach(a => {
         a.classList.toggle('text-neon-cyan', a.getAttribute('data-page') === pageId);
         a.classList.toggle('text-gray-400', a.getAttribute('data-page') !== pageId);
@@ -2752,19 +3048,59 @@
     }
     window.addEventListener('hashchange', () => showPage(getPageFromHash()));
 
-    // Loading screen: show app when user taps START TAPPING
-    const splash = document.getElementById('splash');
+    // Onboarding: multi-step intro for new users
     const app = document.getElementById('app');
-    const splashStart = document.getElementById('splash-start');
-    function startGame() {
-      if (splash) splash.classList.add('hidden');
+    const ONBOARDING_STEPS = [
+      { icon: '🐦', title: 'WELCOME TO 1N TOKEN CLICKER', desc: 'Tap the Cardinal to earn tokens. Every 10 taps = 1 token. Build the community one tap at a time!' },
+      { icon: '⚡', title: 'BOOSTS', desc: 'Spend tokens on Power (2x), Autoclicker, and faster cooldown. Earn more tokens faster!' },
+      { icon: '🎯', title: 'BOUNTIES', desc: 'Claim daily rewards, weekly challenges, and tap milestones. Free tokens for completing goals!' },
+      { icon: '🏆', title: 'PVP DUELS', desc: 'Challenge friends in 30-second click races. Stake tokens — winner takes all!' },
+      { icon: '👛', title: 'WALLET', desc: 'Connect Tonkeeper to swap $CARD for tokens or withdraw tokens to on-chain $CARD.' }
+    ];
+    let onboardingStep = 0;
+    function showOnboardingStep(step) {
+      onboardingStep = step;
+      var container = document.getElementById('onboarding-step');
+      var backBtn = document.getElementById('onboarding-back');
+      var nextBtn = document.getElementById('onboarding-next');
+      if (!container || !backBtn || !nextBtn) return;
+      var s = ONBOARDING_STEPS[step];
+      container.innerHTML = '<div class="text-4xl mb-4">' + s.icon + '</div><p class="text-neon-cyan text-[10px] font-bold mb-2">' + s.title + '</p><p class="text-gray-300 text-[9px] leading-relaxed">' + s.desc + '</p>';
+      backBtn.classList.toggle('hidden', step === 0);
+      nextBtn.textContent = step === 4 ? "LET'S PLAY!" : 'NEXT';
+      document.querySelectorAll('.onboarding-dot').forEach(function(dot, i) {
+        dot.classList.toggle('bg-neon-cyan', i === step);
+        dot.classList.toggle('bg-gray-600', i !== step);
+      });
+    }
+    function finishOnboarding() {
+      try { localStorage.setItem('tokenClicker_onboardingCompleted', '1'); } catch (e) {}
+      var overlay = document.getElementById('onboarding-overlay');
+      if (overlay) { overlay.classList.add('hidden'); overlay.style.display = 'none'; }
       if (app) app.classList.remove('hidden');
       updateBountyProgress();
       save();
       showPage(getPageFromHash());
       updateUI();
+      var playerName = typeof getPlayerName === 'function' ? getPlayerName() : null;
+      if (!playerName) {
+        var welcomeModal = document.getElementById('welcome-name-modal');
+        var welcomeText = welcomeModal && welcomeModal.querySelector('.text-gray-300');
+        var invitedBy = localStorage.getItem('tokenClicker_invitedBy');
+        if (welcomeText) welcomeText.textContent = invitedBy ? 'You were invited! Enter your display name to accept and join. You can change it later in Wallet → Settings.' : 'Enter your display name once. You can change it later in Wallet → Settings.';
+        if (welcomeModal) { welcomeModal.classList.remove('hidden'); welcomeModal.style.display = 'flex'; }
+      } else if (localStorage.getItem('tokenClicker_invitedBy') && typeof registerReferralIfNeeded === 'function') {
+        registerReferralIfNeeded(playerName);
+      }
     }
-    if (splashStart) splashStart.addEventListener('click', startGame);
+    document.getElementById('onboarding-next') && document.getElementById('onboarding-next').addEventListener('click', function() {
+      if (onboardingStep >= 4) finishOnboarding();
+      else { showOnboardingStep(onboardingStep + 1); }
+    });
+    document.getElementById('onboarding-back') && document.getElementById('onboarding-back').addEventListener('click', function() {
+      if (onboardingStep > 0) showOnboardingStep(onboardingStep - 1);
+    });
+    document.getElementById('onboarding-skip') && document.getElementById('onboarding-skip').addEventListener('click', finishOnboarding);
 
     function createStars() {
       const layer = document.getElementById('stars-layer');
@@ -2781,6 +3117,7 @@
 
     window.addEventListener('load', () => {
       createStars();
+      checkDeath();
       updateBountyProgress();
       save();
       var params = new URLSearchParams(window.location.search);
@@ -2796,13 +3133,24 @@
       if (typeof loadLeaderboardPvp === 'function') loadLeaderboardPvp();
       var invitedBy = localStorage.getItem('tokenClicker_invitedBy');
       var playerName = typeof getPlayerName === 'function' ? getPlayerName() : null;
-      if (invitedBy && playerName) {
-        if (typeof registerReferralIfNeeded === 'function') registerReferralIfNeeded(playerName);
-      } else if (invitedBy && !playerName) {
-        var welcomeModal = document.getElementById('welcome-name-modal');
-        var welcomeText = welcomeModal && welcomeModal.querySelector('.text-gray-300');
-        if (welcomeText) welcomeText.textContent = 'You were invited! Enter your display name to accept and join. You can change it later in Wallet → Settings.';
-        if (welcomeModal) { welcomeModal.classList.remove('hidden'); welcomeModal.style.display = 'flex'; }
+      var onboardingDone = localStorage.getItem('tokenClicker_onboardingCompleted') === '1';
+      if (onboardingDone) {
+        if (invitedBy && playerName) {
+          if (typeof registerReferralIfNeeded === 'function') registerReferralIfNeeded(playerName);
+        } else if (invitedBy && !playerName) {
+          var welcomeModal = document.getElementById('welcome-name-modal');
+          var welcomeText = welcomeModal && welcomeModal.querySelector('.text-gray-300');
+          if (welcomeText) welcomeText.textContent = 'You were invited! Enter your display name to accept and join. You can change it later in Wallet → Settings.';
+          if (welcomeModal) { welcomeModal.classList.remove('hidden'); welcomeModal.style.display = 'flex'; }
+        }
+      } else {
+        var overlay = document.getElementById('onboarding-overlay');
+        if (overlay) {
+          overlay.classList.remove('hidden');
+          overlay.style.display = 'flex';
+          if (app) app.classList.add('hidden');
+          showOnboardingStep(0);
+        }
       }
     });
   </script>
