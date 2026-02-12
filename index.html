@@ -300,6 +300,8 @@
       </div>
     </div>
   </div>
+  <!-- Toast: friend accepted invite -->
+  <div id="friend-accepted-toast" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-[10002] px-4 py-2 rounded-lg border-2 border-neon-green bg-black/95 text-neon-green text-[10px] font-bold shadow-lg" style="max-width:90vw;"></div>
   <!-- Notifications center -->
   <div id="notifications-modal" class="hidden" style="position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.9);display:none;align-items:center;justify-content:center;padding:20px;">
     <div class="bg-pixel-panel border-2 border-neon-yellow rounded-lg p-4 max-w-sm w-full max-h-[80vh] flex flex-col">
@@ -1463,6 +1465,7 @@
       }
       const refEl = document.getElementById('referral-code');
       if (refEl) refEl.textContent = refCode;
+      if (typeof subscribeReferralsRealtime === 'function') subscribeReferralsRealtime();
     }
     function loadLeaderboardPvp() {
       var supabase = window.supabaseClient;
@@ -2190,6 +2193,33 @@
       if (wallet) delete c.byWallet[wallet];
       if (refCode) delete c.byRefCode[(refCode || '').toUpperCase()];
       setFriendTokenCache(c);
+    }
+    var friendsReferralsChannel = null;
+    function subscribeReferralsRealtime() {
+      var supabase = window.supabaseClient;
+      var refCode = (localStorage.getItem('tokenClicker_refCode') || '').trim();
+      if (!supabase || !refCode || friendsReferralsChannel) return;
+      friendsReferralsChannel = supabase.channel('referrals-inv-' + refCode).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'referrals', filter: 'inviter_ref_code=eq.' + refCode }, function(payload) {
+        var row = payload.new;
+        if (!row) return;
+        var name = (row.invited_name || 'Someone').trim();
+        function showFriendAcceptedToast() {
+          var toast = document.getElementById('friend-accepted-toast');
+          if (!toast) return;
+          toast.textContent = name + ' accepted your invite!';
+          toast.classList.remove('hidden');
+          setTimeout(function() { toast.classList.add('hidden'); }, 4000);
+        }
+        if (typeof pushNotification === 'function') pushNotification(name + ' accepted your invite!');
+        showFriendAcceptedToast();
+        if (typeof loadFriendsInvited === 'function') loadFriendsInvited();
+      }).subscribe();
+    }
+    function unsubscribeReferralsRealtime() {
+      if (window.supabaseClient && friendsReferralsChannel) {
+        try { window.supabaseClient.removeChannel(friendsReferralsChannel); } catch (e) {}
+        friendsReferralsChannel = null;
+      }
     }
     var friendsLeaderboardChannel = null;
     function subscribeFriendsLeaderboardRealtime() {
