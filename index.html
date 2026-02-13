@@ -379,13 +379,13 @@
         <p class="text-gray-400 text-[9px] mb-1">Levels (by total taps):</p>
         <ul class="text-gray-500 text-[8px] mb-2 space-y-0.5 list-none">
           <li>🥚 Egg: 0</li>
-          <li>🐣 Chick Lv.1–5: 1–199, 200–399, 400–599, 600–799, 800–999</li>
-          <li>🐦 Adult Lv.1–5: 1,000–1,199 … 1,800–1,999</li>
-          <li>🏅 Elite Lv.1–5: 2,000–2,199 … 2,800–2,999</li>
-          <li>🏆 Legend Lv.1–5: 3,000+</li>
+          <li>🐣 Chick Lv.1–10: 1–99, 100–199, … 900–999</li>
+          <li>🐦 Adult Lv.1–10: 1,000–1,099, … 1,900–1,999</li>
+          <li>🏅 Elite Lv.1–10: 2,000–2,099, … 2,900–2,999</li>
+          <li>🏆 Legend Lv.1–10: 3,000+</li>
         </ul>
         <p class="text-gray-400 text-[9px] mb-1">Death: If away &gt; 48 hours, your bird dies 🕊️</p>
-        <p class="text-gray-400 text-[9px] mb-1">Revive: Pay tokens (20 or 10% of balance, min 10) to revive.</p>
+        <p class="text-gray-400 text-[9px] mb-1">Revive: 10 tokens or 10% of balance (whichever is higher). A friend can send you tokens if you have none. Or wait 48 hours for the egg to hatch (free revive).</p>
       </div>
       <button type="button" id="wallet-settings-replay-intro" class="mt-2 w-full py-2 border-2 border-gray-600 text-gray-400 rounded text-[9px] hover:bg-gray-700">REPLAY INTRO</button>
       <button type="button" id="wallet-settings-modal-close" class="mt-4 w-full py-2 border-2 border-gray-500 text-gray-400 rounded text-[10px] hover:bg-gray-700">CLOSE</button>
@@ -402,17 +402,19 @@
       </div>
     </div>
   </div>
-  <!-- Death modal: bird died from inactivity, revive with tokens -->
+  <!-- Death modal: bird died from inactivity, revive with tokens or wait 48h for egg hatch -->
   <div id="death-modal" class="hidden" style="position:fixed;inset:0;z-index:10003;background:rgba(0,0,0,0.95);display:none;align-items:center;justify-content:center;padding:20px;">
     <div class="bg-pixel-panel border-2 border-gray-600 rounded-lg p-6 max-w-sm w-full text-center">
       <p class="text-4xl mb-2">🕊️</p>
       <p class="text-neon-yellow text-[10px] font-bold mb-2">YOUR BIRD DIED</p>
       <p class="text-gray-500 text-[8px] mb-1">Deaths: <span id="death-count">0</span></p>
-      <p class="text-gray-300 text-[9px] mb-3">You were away too long. Use tokens to revive and keep playing.</p>
-      <p id="death-revive-cost" class="text-neon-cyan text-[10px] mb-3">Revive cost: 20 tokens</p>
-      <p id="death-balance" class="text-gray-500 text-[9px] mb-3">Your balance: 0 tokens</p>
+      <p class="text-gray-300 text-[9px] mb-3">You were away too long. Revive with 10 tokens or 10% of balance — or a friend can send you tokens. Or wait 48 hours for the egg to hatch (free).</p>
+      <p id="death-revive-cost" class="text-neon-cyan text-[10px] mb-2">Revive cost: 10 tokens</p>
+      <p id="death-balance" class="text-gray-500 text-[9px] mb-2">Your balance: 0 tokens</p>
+      <p id="death-hatch-countdown" class="text-gray-500 text-[8px] mb-2 hidden"></p>
       <div class="flex gap-2 justify-center flex-wrap">
         <button type="button" id="death-revive-btn" class="py-2 px-5 border-2 border-neon-green text-neon-green rounded text-[10px] hover:bg-neon-green/10 font-bold disabled:opacity-50 disabled:cursor-not-allowed">REVIVE</button>
+        <button type="button" id="death-hatch-btn" class="hidden py-2 px-5 border-2 border-neon-yellow text-neon-yellow rounded text-[10px] hover:bg-neon-yellow/10 font-bold">EGG HATCH</button>
         <a href="#bounties" id="death-earn-tokens" class="py-2 px-5 border-2 border-gray-500 text-gray-400 rounded text-[10px] hover:bg-gray-700">EARN TOKENS</a>
       </div>
       <p class="text-gray-600 text-[8px] mt-2">Rules in Wallet → Settings</p>
@@ -558,23 +560,26 @@
           <div class="badge-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-base bg-pixel-panel opacity-50" id="badge-11" title="30-Day Streak">📅</div>
         </div>
       </div>
-      <!-- Upgrade strip (match reference) -->
+      <!-- Upgrade strip: purchase when affordable, grayed out with no button when not -->
       <div class="mt-4 grid grid-cols-3 gap-2">
-        <a href="#boosts" class="bg-pixel-panel border-2 border-gray-700 p-3 rounded text-center hover:border-neon-cyan/50 transition-colors">
+        <div id="home-strip-power" class="bg-pixel-panel border-2 border-gray-700 p-3 rounded text-center transition-colors home-strip-card">
           <div class="text-neon-yellow text-base mb-1">⚡</div>
           <div class="home-center-text">Power</div>
           <div class="text-gray-500 home-center-text">Cost: 50</div>
-        </a>
-        <a href="#boosts" class="bg-pixel-panel border-2 border-gray-700 p-3 rounded text-center hover:border-neon-green/50 transition-colors">
+          <button type="button" class="home-strip-btn boost-btn mt-2 border-2 border-neon-cyan text-neon-cyan px-3 py-1 rounded text-[10px] hover:bg-neon-cyan/10 disabled:opacity-50 disabled:cursor-not-allowed" data-cost="50" data-boost="tapPower">USE</button>
+        </div>
+        <div id="home-strip-autoclick" class="bg-pixel-panel border-2 border-gray-700 p-3 rounded text-center transition-colors home-strip-card">
           <div class="text-neon-green text-base mb-1">🔋</div>
           <div class="home-center-text">Autoclick</div>
           <div class="text-gray-500 home-center-text">Cost: 100</div>
-        </a>
-        <a href="#boosts" class="bg-pixel-panel border-2 border-gray-700 p-3 rounded text-center hover:border-neon-cyan/50 transition-colors">
+          <button type="button" class="home-strip-btn boost-btn mt-2 border-2 border-neon-cyan text-neon-cyan px-3 py-1 rounded text-[10px] hover:bg-neon-cyan/10 disabled:opacity-50 disabled:cursor-not-allowed" data-cost="100" data-boost="autoclicker">USE</button>
+        </div>
+        <div id="home-strip-regen" class="bg-pixel-panel border-2 border-gray-700 p-3 rounded text-center transition-colors home-strip-card">
           <div class="text-neon-cyan text-base mb-1">♻️</div>
           <div class="home-center-text">Regen</div>
           <div class="text-gray-500 home-center-text">Cost: 75</div>
-        </a>
+          <button type="button" class="home-strip-btn boost-btn mt-2 border-2 border-neon-cyan text-neon-cyan px-3 py-1 rounded text-[10px] hover:bg-neon-cyan/10 disabled:opacity-50 disabled:cursor-not-allowed" data-cost="75" data-boost="cooldown">USE</button>
+        </div>
       </div>
     </section>
 
@@ -1152,31 +1157,51 @@
     const COOLDOWN_SUPER_MS = 150;
     const BUFF_DURATION_MS = 60 * 1000;
     const DEATH_IDLE_HOURS = 48;
-    const REVIVE_BASE_COST = 20;
     const REVIVE_PERCENT = 0.1;
     const REVIVE_MIN = 10;
+    const EGG_HATCH_HOURS = 48;
     const BIRD_LEVELS = [
       { taps: 0, emoji: '🥚', name: 'Egg' },
       { taps: 1, emoji: '🐣', name: 'Chick Lv.1' },
-      { taps: 200, emoji: '🐣', name: 'Chick Lv.2' },
-      { taps: 400, emoji: '🐣', name: 'Chick Lv.3' },
-      { taps: 600, emoji: '🐤', name: 'Chick Lv.4' },
-      { taps: 800, emoji: '🐤', name: 'Chick Lv.5' },
+      { taps: 100, emoji: '🐣', name: 'Chick Lv.2' },
+      { taps: 200, emoji: '🐣', name: 'Chick Lv.3' },
+      { taps: 300, emoji: '🐣', name: 'Chick Lv.4' },
+      { taps: 400, emoji: '🐤', name: 'Chick Lv.5' },
+      { taps: 500, emoji: '🐤', name: 'Chick Lv.6' },
+      { taps: 600, emoji: '🐤', name: 'Chick Lv.7' },
+      { taps: 700, emoji: '🐤', name: 'Chick Lv.8' },
+      { taps: 800, emoji: '🐤', name: 'Chick Lv.9' },
+      { taps: 900, emoji: '🐤', name: 'Chick Lv.10' },
       { taps: 1000, emoji: '🐦', name: 'Adult Lv.1' },
-      { taps: 1200, emoji: '🐦', name: 'Adult Lv.2' },
-      { taps: 1400, emoji: '🐦', name: 'Adult Lv.3' },
-      { taps: 1600, emoji: '🐦', name: 'Adult Lv.4' },
-      { taps: 1800, emoji: '🐦', name: 'Adult Lv.5' },
+      { taps: 1100, emoji: '🐦', name: 'Adult Lv.2' },
+      { taps: 1200, emoji: '🐦', name: 'Adult Lv.3' },
+      { taps: 1300, emoji: '🐦', name: 'Adult Lv.4' },
+      { taps: 1400, emoji: '🐦', name: 'Adult Lv.5' },
+      { taps: 1500, emoji: '🐦', name: 'Adult Lv.6' },
+      { taps: 1600, emoji: '🐦', name: 'Adult Lv.7' },
+      { taps: 1700, emoji: '🐦', name: 'Adult Lv.8' },
+      { taps: 1800, emoji: '🐦', name: 'Adult Lv.9' },
+      { taps: 1900, emoji: '🐦', name: 'Adult Lv.10' },
       { taps: 2000, emoji: '🏅', name: 'Elite Lv.1' },
-      { taps: 2200, emoji: '🏅', name: 'Elite Lv.2' },
-      { taps: 2400, emoji: '🏅', name: 'Elite Lv.3' },
-      { taps: 2600, emoji: '🏅', name: 'Elite Lv.4' },
-      { taps: 2800, emoji: '🏅', name: 'Elite Lv.5' },
+      { taps: 2100, emoji: '🏅', name: 'Elite Lv.2' },
+      { taps: 2200, emoji: '🏅', name: 'Elite Lv.3' },
+      { taps: 2300, emoji: '🏅', name: 'Elite Lv.4' },
+      { taps: 2400, emoji: '🏅', name: 'Elite Lv.5' },
+      { taps: 2500, emoji: '🏅', name: 'Elite Lv.6' },
+      { taps: 2600, emoji: '🏅', name: 'Elite Lv.7' },
+      { taps: 2700, emoji: '🏅', name: 'Elite Lv.8' },
+      { taps: 2800, emoji: '🏅', name: 'Elite Lv.9' },
+      { taps: 2900, emoji: '🏅', name: 'Elite Lv.10' },
       { taps: 3000, emoji: '🏆', name: 'Legend Lv.1' },
-      { taps: 3200, emoji: '🏆', name: 'Legend Lv.2' },
-      { taps: 3400, emoji: '🏆', name: 'Legend Lv.3' },
-      { taps: 3600, emoji: '🏆', name: 'Legend Lv.4' },
-      { taps: 3800, emoji: '🏆', name: 'Legend Lv.5' }
+      { taps: 3100, emoji: '🏆', name: 'Legend Lv.2' },
+      { taps: 3200, emoji: '🏆', name: 'Legend Lv.3' },
+      { taps: 3300, emoji: '🏆', name: 'Legend Lv.4' },
+      { taps: 3400, emoji: '🏆', name: 'Legend Lv.5' },
+      { taps: 3500, emoji: '🏆', name: 'Legend Lv.6' },
+      { taps: 3600, emoji: '🏆', name: 'Legend Lv.7' },
+      { taps: 3700, emoji: '🏆', name: 'Legend Lv.8' },
+      { taps: 3800, emoji: '🏆', name: 'Legend Lv.9' },
+      { taps: 3900, emoji: '🏆', name: 'Legend Lv.10' }
     ];
 
     // --- State (load from localStorage) ---
@@ -1240,6 +1265,8 @@
     let lastActivityAt = parseInt(localStorage.getItem('tokenClicker_lastActivityAt') || String(Date.now()), 10);
     let isDead = localStorage.getItem('tokenClicker_isDead') === '1';
     let deathCount = parseInt(localStorage.getItem('tokenClicker_deathCount') || '0', 10);
+    let deathTime = parseInt(localStorage.getItem('tokenClicker_deathTime') || '0', 10);
+    if (isDead && !deathTime && lastActivityAt) deathTime = lastActivityAt;
 
     let lastClickTime = 0;
     let clicksInLastSecond = 0;
@@ -1358,6 +1385,8 @@
       localStorage.setItem('tokenClicker_lastActivityAt', String(lastActivityAt));
       localStorage.setItem('tokenClicker_isDead', isDead ? '1' : '0');
       localStorage.setItem('tokenClicker_deathCount', String(deathCount));
+      if (isDead && deathTime) localStorage.setItem('tokenClicker_deathTime', String(deathTime));
+      else try { localStorage.removeItem('tokenClicker_deathTime'); } catch (e) {}
       if (typeof syncTokensToLeaderboard === 'function') syncTokensToLeaderboard();
     }
 
@@ -1370,13 +1399,27 @@
     }
     function getReviveCost() {
       const percentCost = Math.ceil(tokens * REVIVE_PERCENT);
-      return Math.max(REVIVE_MIN, Math.max(REVIVE_BASE_COST, percentCost));
+      return Math.max(REVIVE_MIN, percentCost);
+    }
+    function canReviveByHatch() {
+      if (!isDead || !deathTime) return false;
+      const elapsedMs = Date.now() - deathTime;
+      return elapsedMs >= EGG_HATCH_HOURS * 60 * 60 * 1000;
     }
     function reviveBird() {
       const cost = getReviveCost();
       if (tokens < cost) return;
       tokens -= cost;
       isDead = false;
+      deathTime = 0;
+      lastActivityAt = Date.now();
+      save();
+      updateUI();
+    }
+    function reviveByHatch() {
+      if (!canReviveByHatch()) return;
+      isDead = false;
+      deathTime = 0;
       lastActivityAt = Date.now();
       save();
       updateUI();
@@ -1386,6 +1429,7 @@
       const idleHours = idleMs / (1000 * 60 * 60);
       if (idleHours >= DEATH_IDLE_HOURS && !isDead) {
         isDead = true;
+        deathTime = Date.now();
         deathCount++;
         save();
       }
@@ -1531,7 +1575,7 @@
         var parts = [];
         var now = Date.now();
         if (buffTapPowerUntil > now) parts.push('Tap ' + buffTapPowerLevel + 'x: ' + getBuffCountdown(buffTapPowerUntil) + 's');
-        if (buffAutoclickerUntil > now) parts.push('AC: ' + getBuffCountdown(buffAutoclickerUntil) + 's');
+        if (buffAutoclickerUntil > now) parts.push('AutoClicker: ' + getBuffCountdown(buffAutoclickerUntil) + 's');
         if (buffTurboUntil > now) parts.push('Turbo: ' + getBuffCountdown(buffTurboUntil) + 's');
         if (buffCooldownUntil > now || buffSuperCooldownUntil > now) parts.push('Cooldown: ' + getBuffCountdown(Math.max(buffCooldownUntil, buffSuperCooldownUntil)) + 's');
         if (buffPowerCapacityUntil > now) parts.push('Power+: ' + getBuffCountdown(buffPowerCapacityUntil) + 's');
@@ -1550,6 +1594,7 @@
       if (pvpBal && typeof getInGameTokenBalance === 'function') pvpBal.textContent = getInGameTokenBalance();
       if (typeof updatePowerBar === 'function') updatePowerBar();
       updateBoostsUI();
+      updateHomeStrip();
       updateBountiesUI();
       updateGraduatingBountyBar();
       updateLeaderboard();
@@ -1566,6 +1611,22 @@
         if (revBtn) revBtn.disabled = tokens < getReviveCost();
         var dcEl = document.getElementById('death-count');
         if (dcEl) dcEl.textContent = deathCount;
+        var hatchBtn = document.getElementById('death-hatch-btn');
+        var hatchCountdownEl = document.getElementById('death-hatch-countdown');
+        var hatchOk = typeof canReviveByHatch === 'function' && canReviveByHatch();
+        if (hatchBtn) { hatchBtn.classList.toggle('hidden', !hatchOk); hatchBtn.style.display = hatchOk ? '' : 'none'; }
+        if (hatchCountdownEl) {
+          if (hatchOk) { hatchCountdownEl.classList.add('hidden'); hatchCountdownEl.textContent = ''; }
+          else if (deathTime && typeof EGG_HATCH_HOURS !== 'undefined') {
+            var remainingMs = (EGG_HATCH_HOURS * 60 * 60 * 1000) - (Date.now() - deathTime);
+            if (remainingMs > 0) {
+              var h = Math.floor(remainingMs / (60 * 60 * 1000));
+              var m = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
+              hatchCountdownEl.textContent = 'Egg hatches in ' + h + 'h ' + m + 'm';
+              hatchCountdownEl.classList.remove('hidden');
+            } else { hatchCountdownEl.classList.add('hidden'); hatchCountdownEl.textContent = ''; }
+          } else { hatchCountdownEl.classList.add('hidden'); }
+        }
       } else {
         if (dm) { dm.classList.add('hidden'); dm.style.display = 'none'; }
       }
@@ -1687,6 +1748,33 @@
     }
     function updateBoostsUI() {
       updateBoostButtons();
+    }
+    function updateHomeStrip() {
+      var now = Date.now();
+      var powerCard = document.getElementById('home-strip-power');
+      var autoclickCard = document.getElementById('home-strip-autoclick');
+      var regenCard = document.getElementById('home-strip-regen');
+      function setCard(card, cost, boost) {
+        if (!card) return;
+        var btn = card.querySelector('.home-strip-btn');
+        var canAfford = tokens >= cost;
+        card.classList.toggle('opacity-50', !canAfford);
+        card.classList.toggle('pointer-events-none', !canAfford);
+        if (btn) {
+          btn.style.display = canAfford ? '' : 'none';
+          if (canAfford) {
+            var active = false, until = 0;
+            if (boost === 'tapPower') { active = buffTapPowerUntil > now; until = buffTapPowerUntil; }
+            else if (boost === 'autoclicker') { active = buffAutoclickerUntil > now; until = buffAutoclickerUntil; }
+            else if (boost === 'cooldown') { active = (buffCooldownUntil > now || buffSuperCooldownUntil > now); until = Math.max(buffCooldownUntil, buffSuperCooldownUntil); }
+            btn.textContent = active ? getBuffCountdown(until) + 's' : 'USE';
+            btn.disabled = tokens < cost;
+          }
+        }
+      }
+      setCard(powerCard, 50, 'tapPower');
+      setCard(autoclickCard, 100, 'autoclicker');
+      setCard(regenCard, 75, 'cooldown');
     }
 
     function updateBountiesUI() {
@@ -1978,9 +2066,8 @@
       }
     });
 
-    document.getElementById('death-revive-btn') && document.getElementById('death-revive-btn').addEventListener('click', function() {
-      reviveBird();
-    });
+    document.getElementById('death-revive-btn') && document.getElementById('death-revive-btn').addEventListener('click', function() { reviveBird(); });
+    document.getElementById('death-hatch-btn') && document.getElementById('death-hatch-btn').addEventListener('click', function() { reviveByHatch(); });
 
     // Boosts: buy 60s buffs (consumable)
     document.querySelectorAll('.boost-btn').forEach(btn => {
