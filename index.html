@@ -441,6 +441,37 @@
       <button type="button" id="pvp-full-list-modal-close" class="mt-3 py-2 border-2 border-gray-500 text-gray-400 rounded text-[10px] hover:bg-gray-700">CLOSE</button>
     </div>
   </div>
+  <!-- Friends modal: invite & requests (opened by FRIENDS button in header) -->
+  <div id="friends-modal" class="hidden" style="position:fixed;inset:0;z-index:10002;background:rgba(0,0,0,0.95);display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto;">
+    <div class="bg-pixel-panel border-2 border-neon-cyan/50 rounded-lg p-4 max-w-sm w-full my-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between gap-2 mb-3 border-b border-gray-700 pb-2">
+        <p class="text-neon-cyan text-[10px] font-bold">FRIENDS — INVITE & REQUESTS</p>
+        <button type="button" id="friends-modal-close" class="p-1.5 border-2 border-gray-500 text-gray-400 rounded text-[9px] hover:bg-gray-700" aria-label="Close">✕</button>
+      </div>
+      <p class="text-gray-500 text-[9px] mb-2">Your code: <span id="referral-code" class="neon-text-cyan">------</span></p>
+      <button type="button" id="invite-btn" class="w-full py-2 px-4 border-2 border-neon-cyan text-neon-cyan rounded hover:bg-neon-cyan/10 text-[10px] mb-2">COPY INVITE LINK</button>
+      <p id="invite-feedback" class="text-neon-green text-[9px] mb-3 hidden">Link copied! Send to friends—when they open it, your code is applied.</p>
+      <div class="text-[9px] text-gray-500 uppercase tracking-wider mb-1">Friends (invited / by code)</div>
+      <ol id="friends-invited-list" class="space-y-1 text-[10px] min-h-[24px] mb-3"><li class="text-gray-500">Loading…</li></ol>
+      <div id="friend-requests-section" class="hidden mt-2 pt-2 border-t border-gray-800/60 mb-3">
+        <div class="text-[9px] text-gray-500 uppercase tracking-wider">Pending requests</div>
+        <ol id="friend-requests-list" class="space-y-2 text-[10px] min-h-[24px]"></ol>
+      </div>
+      <div class="mb-3">
+        <button type="button" id="friends-play-vs-computer-btn" class="w-full py-2 px-4 border-2 border-neon-yellow text-neon-yellow rounded text-[10px] hover:bg-neon-yellow/10">PLAY VS COMPUTER</button>
+      </div>
+      <div class="text-[9px] text-gray-500 uppercase tracking-wider mb-1">Added by code</div>
+      <ol id="friends-added-list" class="space-y-1 text-[10px] min-h-[24px] mb-3"><li class="text-gray-500">Loading…</li></ol>
+      <div class="pt-2 border-t border-gray-800/60">
+        <div class="text-[9px] text-gray-500 mb-1">Add friend by invite code</div>
+        <div class="flex gap-2 flex-wrap items-center">
+          <input type="text" id="friend-code-input" placeholder="E.G. REFABC12" maxlength="20" class="flex-1 min-w-[100px] bg-black border-2 border-gray-600 rounded px-2 py-1.5 text-neon-cyan text-[10px] uppercase" />
+          <button type="button" id="friend-code-add-btn" class="py-1.5 px-3 border-2 border-neon-cyan text-neon-cyan rounded text-[9px] hover:bg-neon-cyan/10">ADD FRIEND</button>
+        </div>
+        <p id="friend-code-feedback" class="text-[9px] min-h-[14px] hidden"></p>
+      </div>
+    </div>
+  </div>
   <div id="pvp-onboarding-modal" class="hidden" style="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.9);display:none;align-items:center;justify-content:center;padding:20px;">
     <div class="bg-pixel-panel border-2 border-neon-pink rounded-lg p-6 max-w-sm w-full text-center">
       <p class="text-neon-pink text-[10px] font-bold mb-3">JOIN PVP DUEL</p>
@@ -461,7 +492,7 @@
   </div>
 
   <div id="app" style="display:block;">
-  <!-- Top Bar: 1N BLOCKCHAIN logo + tokens + PVP/bell -->
+  <!-- Top Bar: logo, tokens, notifications, settings (nav is bottom bar only) -->
   <header class="sticky top-0 z-50 bg-black/90 border-b-2 border-pixel-border backdrop-blur-sm">
     <div class="max-w-lg mx-auto px-4 py-2 flex items-center justify-between gap-2">
       <div class="flex items-center gap-2 min-w-0 flex-1">
@@ -974,11 +1005,11 @@
       </div>
     </section>
 
-    <!-- Multiplayer (FRIENDS is a button here, not in bottom nav) -->
+    <!-- Multiplayer -->
     <section id="page-multiplayer" class="page p-4">
       <div class="flex items-center justify-between gap-2 mb-4 border-b-2 border-gray-700 pb-2">
         <h2 class="text-neon-pink">MULTIPLAYER</h2>
-        <button type="button" id="pvp-friends-btn" class="py-1.5 px-3 border-2 border-neon-cyan text-neon-cyan rounded text-[9px] hover:bg-neon-cyan/10 shrink-0">FRIENDS</button>
+        <button type="button" id="header-friends-btn" class="py-1.5 px-3 border-2 border-neon-cyan text-neon-cyan rounded text-[9px] hover:bg-neon-cyan/10 shrink-0">FRIENDS</button>
       </div>
       <p class="text-gray-400 mb-4">Share the game. When friends open the link on their phone, they can play and challenge you.</p>
       <!-- Leaderboard -->
@@ -1005,29 +1036,6 @@
           <button type="button" id="share-game-native-btn" class="py-2 px-4 border-2 border-neon-cyan text-neon-cyan rounded text-[10px] hover:bg-neon-cyan/10 active:scale-[0.98] min-h-[44px] hidden">SHARE (APP)</button>
         </div>
         <p id="share-game-feedback" class="text-neon-green text-[9px] mt-2 hidden">Link copied! Paste in a message – friend opens it on their phone to play.</p>
-      </div>
-      <!-- Friends section: shown when FRIENDS button is clicked -->
-      <div id="pvp-friends-section" class="hidden bg-pixel-panel border-2 border-neon-cyan/30 p-3 rounded mb-4">
-        <div class="text-[10px] text-gray-500 mb-2">FRIENDS — INVITE & REQUESTS</div>
-        <p class="text-gray-500 text-[9px] mb-2">Your code: <span id="referral-code" class="neon-text-cyan">------</span></p>
-        <button type="button" id="invite-btn" class="w-full py-2 px-4 border-2 border-neon-cyan text-neon-cyan rounded hover:bg-neon-cyan/10 text-[10px] mb-2">COPY INVITE LINK</button>
-        <p id="invite-feedback" class="text-neon-green text-[9px] mb-3 hidden">Link copied! Send to friends—when they open it, your code is applied.</p>
-        <div class="text-[9px] text-gray-500 uppercase tracking-wider mb-1">Friends (invited / by code)</div>
-        <ol id="friends-invited-list" class="space-y-1 text-[10px] min-h-[24px]"><li class="text-gray-500">Loading…</li></ol>
-        <div id="friend-requests-section" class="hidden mt-2 pt-2 border-t border-gray-800/60">
-          <div class="text-[9px] text-gray-500 uppercase tracking-wider">Pending requests</div>
-          <ol id="friend-requests-list" class="space-y-2 text-[10px] min-h-[24px]"></ol>
-        </div>
-        <div class="text-[9px] text-gray-500 uppercase tracking-wider mt-2">Added by code</div>
-        <ol id="friends-added-list" class="space-y-1 text-[10px] min-h-[24px]"><li class="text-gray-500">Loading…</li></ol>
-        <div class="mt-3 pt-2 border-t border-gray-800/60">
-          <div class="text-[9px] text-gray-500 mb-1">Add friend by invite code</div>
-          <div class="flex gap-2 flex-wrap items-center">
-            <input type="text" id="friend-code-input" placeholder="e.g. REFABC12" maxlength="20" class="flex-1 min-w-[100px] bg-black border-2 border-gray-600 rounded px-2 py-1.5 text-neon-cyan text-[10px] uppercase" />
-            <button type="button" id="friend-code-add-btn" class="py-1.5 px-3 border-2 border-neon-cyan text-neon-cyan rounded text-[9px] hover:bg-neon-cyan/10">ADD FRIEND</button>
-          </div>
-          <p id="friend-code-feedback" class="text-[9px] min-h-[14px] hidden"></p>
-        </div>
       </div>
       <div id="pvp-lobby-wrap">
       <p class="text-gray-500 text-[9px] mb-3">Lobby: 2-player rooms. Create a new room or join an open one.</p>
@@ -1893,14 +1901,22 @@
       }
       var hadContent = targets.some(function(t) { return t.innerHTML && t.innerHTML.indexOf('Loading') < 0 && t.innerHTML.indexOf('No duel wins') < 0 && t.innerHTML.indexOf('unavailable') < 0; });
       if (!hadContent) setAll('<li class="text-gray-500">Loading…</li>');
-      supabase.from('leaderboard').select('name, pvp_wins').order('pvp_wins', { ascending: false }).limit(5).then(function(r) {
+      supabase.from('leaderboard').select('name, pvp_wins').not('pvp_wins', 'is', null).then(function(r) {
         if (r.error || !r.data || r.data.length === 0) {
           setAll('<li class="text-gray-500">No duel wins yet.</li>');
           return;
         }
-        var html = r.data.map(function(e) {
-          var wins = e.pvp_wins != null ? e.pvp_wins : 0;
-          return '<li>' + (e.name || 'Player') + ' — ' + wins + ' win' + (wins !== 1 ? 's' : '') + '</li>';
+        var byName = {};
+        r.data.forEach(function(e) {
+          var name = (e.name || 'Player').trim() || 'Player';
+          var w = e.pvp_wins != null ? Number(e.pvp_wins) : 0;
+          if (!byName[name]) byName[name] = 0;
+          byName[name] += w;
+        });
+        var sorted = Object.keys(byName).map(function(name) { return { name: name, wins: byName[name] }; }).sort(function(a, b) { return b.wins - a.wins; }).slice(0, 5);
+        var html = sorted.map(function(e) {
+          var wins = e.wins;
+          return '<li>' + e.name + ' — ' + wins + ' win' + (wins !== 1 ? 's' : '') + '</li>';
         }).join('');
         setAll(html);
       });
@@ -1911,14 +1927,22 @@
       if (!list) return;
       if (!supabase) { list.innerHTML = '<li class="text-gray-500">Leaderboard unavailable.</li>'; return; }
       list.innerHTML = '<li class="text-gray-500">Loading…</li>';
-      supabase.from('leaderboard').select('name, pvp_wins').order('pvp_wins', { ascending: false }).limit(100).then(function(r) {
+      supabase.from('leaderboard').select('name, pvp_wins').not('pvp_wins', 'is', null).then(function(r) {
         if (r.error || !r.data || r.data.length === 0) {
           list.innerHTML = '<li class="text-gray-500">No duel wins yet.</li>';
           return;
         }
-        list.innerHTML = r.data.map(function(e, i) {
-          var wins = e.pvp_wins != null ? e.pvp_wins : 0;
-          return '<li>' + (e.name || 'Player') + ' — ' + wins + ' win' + (wins !== 1 ? 's' : '') + '</li>';
+        var byName = {};
+        r.data.forEach(function(e) {
+          var name = (e.name || 'Player').trim() || 'Player';
+          var w = e.pvp_wins != null ? Number(e.pvp_wins) : 0;
+          if (!byName[name]) byName[name] = 0;
+          byName[name] += w;
+        });
+        var sorted = Object.keys(byName).map(function(name) { return { name: name, wins: byName[name] }; }).sort(function(a, b) { return b.wins - a.wins; }).slice(0, 100);
+        list.innerHTML = sorted.map(function(e) {
+          var wins = e.wins;
+          return '<li>' + e.name + ' — ' + wins + ' win' + (wins !== 1 ? 's' : '') + '</li>';
         }).join('');
       });
     }
@@ -2760,9 +2784,8 @@
         if (w && (w in cache.byWallet)) { mergeFriendTokenCache({ [w]: t }, null); changed = true; }
         if (r && (r in cache.byRefCode)) { mergeFriendTokenCache(null, { [r]: t }); changed = true; }
         if (changed) {
-          var mp = document.getElementById('page-multiplayer');
-          var fs = document.getElementById('pvp-friends-section');
-          if (mp && mp.classList.contains('active') && fs && !fs.classList.contains('hidden')) {
+          var fm = document.getElementById('friends-modal');
+          if (fm && !fm.classList.contains('hidden')) {
             if (typeof loadFriendsInvited === 'function') loadFriendsInvited();
             if (typeof loadFriendRequests === 'function') loadFriendRequests();
             if (typeof loadFriendsAddedByCode === 'function') loadFriendsAddedByCode();
@@ -2808,7 +2831,9 @@
     function startFriendsTokenPolling() {
       if (friendsPollInterval) return;
       friendsPollInterval = setInterval(function() {
-        if (document.getElementById('page-multiplayer') && document.getElementById('page-multiplayer').classList.contains('active')) {
+        var fm = document.getElementById('friends-modal');
+        var onFriends = fm && !fm.classList.contains('hidden');
+        if (onFriends) {
           if (typeof loadFriendsInvited === 'function') loadFriendsInvited();
           if (typeof loadFriendRequests === 'function') loadFriendRequests();
           if (typeof loadFriendsAddedByCode === 'function') loadFriendsAddedByCode();
@@ -2831,18 +2856,7 @@
       supabase.from('referrals').select('invited_name, invited_wallet, created_at').eq('inviter_ref_code', refCode).order('created_at', { ascending: false }).limit(50)
         .then(function(r) {
           if (r.error || !r.data || r.data.length === 0) {
-            list.innerHTML = '<li class="text-gray-500">No one has used your invite link yet.</li>' +
-              '<li class="mt-2"><button type="button" id="friends-play-vs-computer-btn" class="py-2 px-3 border-2 border-neon-yellow text-neon-yellow rounded text-[9px] hover:bg-neon-yellow/10">Play vs Computer</button></li>';
-            var btn = document.getElementById('friends-play-vs-computer-btn');
-            if (btn) btn.addEventListener('click', function() {
-              try { sessionStorage.setItem('tokenClicker_startVsComputer', '1'); } catch (e) {}
-              window.location.hash = 'multiplayer';
-              showPage('multiplayer');
-              if (typeof window.startVsComputer === 'function') {
-                try { sessionStorage.removeItem('tokenClicker_startVsComputer'); } catch (e) {}
-                window.startVsComputer();
-              }
-            });
+            list.innerHTML = '<li class="text-gray-500">No one has used your invite link yet.</li>';
             return;
           }
           var wallets = r.data.map(function(e) { return (e.invited_wallet || '').trim(); }).filter(Boolean);
@@ -3272,6 +3286,25 @@
     }
     document.getElementById('wallet-settings-modal-close') && document.getElementById('wallet-settings-modal-close').addEventListener('click', closeWalletSettingsModal);
     document.getElementById('wallet-settings-modal-close-x') && document.getElementById('wallet-settings-modal-close-x').addEventListener('click', closeWalletSettingsModal);
+    function openFriendsModal() {
+      var modal = document.getElementById('friends-modal');
+      if (modal) { modal.classList.remove('hidden'); modal.style.display = 'flex'; }
+      if (typeof loadFriendsInvited === 'function') loadFriendsInvited();
+      if (typeof loadFriendRequests === 'function') loadFriendRequests();
+      if (typeof loadFriendsAddedByCode === 'function') loadFriendsAddedByCode();
+      startFriendsTokenPolling();
+      if (typeof subscribeFriendRequestsRealtime === 'function') subscribeFriendRequestsRealtime();
+    }
+    function closeFriendsModal() {
+      var modal = document.getElementById('friends-modal');
+      if (modal) { modal.classList.add('hidden'); modal.style.display = 'none'; }
+      stopFriendsTokenPolling();
+    }
+    document.getElementById('header-friends-btn') && document.getElementById('header-friends-btn').addEventListener('click', openFriendsModal);
+    document.getElementById('friends-modal-close') && document.getElementById('friends-modal-close').addEventListener('click', closeFriendsModal);
+    document.getElementById('friends-modal') && document.getElementById('friends-modal').addEventListener('click', function(e) {
+      if (e.target && e.target.id === 'friends-modal') closeFriendsModal();
+    });
     document.getElementById('wallet-settings-replay-intro') && document.getElementById('wallet-settings-replay-intro').addEventListener('click', function() {
       var modal = document.getElementById('wallet-settings-modal');
       if (modal) { modal.classList.add('hidden'); modal.style.display = 'none'; }
@@ -4071,12 +4104,6 @@
     window.startVsComputer = startVsComputer;
     var pvpCreateBtn = document.getElementById('pvp-create-room-btn');
     var pvpRefreshBtn = document.getElementById('pvp-refresh-btn');
-    document.getElementById('pvp-friends-btn') && document.getElementById('pvp-friends-btn').addEventListener('click', function() {
-      var section = document.getElementById('pvp-friends-section');
-      if (!section) return;
-      section.classList.toggle('hidden');
-      if (!section.classList.contains('hidden')) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
     if (pvpCreateBtn) pvpCreateBtn.addEventListener('click', createPvpRoom);
     if (pvpRefreshBtn) pvpRefreshBtn.addEventListener('click', function() { loadPvpRooms(); });
     document.querySelectorAll('.pvp-stake-btn').forEach(function(btn) {
@@ -4098,6 +4125,20 @@
         if (n && n.trim()) setPlayerName(n.trim().slice(0, 20));
       }
       startVsComputer();
+    });
+    document.getElementById('friends-play-vs-computer-btn') && document.getElementById('friends-play-vs-computer-btn').addEventListener('click', function() {
+      var name = getPlayerName();
+      if (!name) {
+        var n = prompt('Enter your name to play vs computer (practice):', 'Player');
+        if (n && n.trim()) setPlayerName(n.trim().slice(0, 20));
+      }
+      try { sessionStorage.setItem('tokenClicker_startVsComputer', '1'); } catch (e) {}
+      window.location.hash = 'multiplayer';
+      showPage('multiplayer');
+      if (typeof window.startVsComputer === 'function') {
+        try { sessionStorage.removeItem('tokenClicker_startVsComputer'); } catch (e) {}
+        window.startVsComputer();
+      }
     });
     document.getElementById('pvp-invited-join-btn') && document.getElementById('pvp-invited-join-btn').addEventListener('click', function() {
       var roomId = window._pvpInvitedRoomId || new URLSearchParams(window.location.search).get('room');
@@ -4129,7 +4170,7 @@
     // Routing
     function getPageFromHash() {
       const hash = (window.location.hash || '#home').slice(1).toLowerCase();
-      return hash === 'friends' ? 'multiplayer' : (hash === '' ? 'home' : hash);
+      return hash === '' ? 'home' : hash;
     }
     function getPvpInvitedRoomId() {
       return window._pvpInvitedRoomId || (typeof URLSearchParams !== 'undefined' && new URLSearchParams(window.location.search).get('room')) || (function() { try { return sessionStorage.getItem('tokenClicker_pvpInvitedRoom'); } catch (e) { return null; } })() || null;
@@ -4214,14 +4255,7 @@
       updatePvpInviteBanner();
       if (pageId === 'home' && typeof updateUI === 'function') updateUI();
       if (pageId === 'multiplayer') {
-        startFriendsTokenPolling();
-        if (typeof subscribeFriendRequestsRealtime === 'function') subscribeFriendRequestsRealtime();
         if (typeof loadLeaderboardPvp === 'function') loadLeaderboardPvp();
-        if (typeof loadFriendsInvited === 'function') loadFriendsInvited();
-        if (typeof loadFriendRequests === 'function') loadFriendRequests();
-        if (typeof loadFriendsAddedByCode === 'function') loadFriendsAddedByCode();
-      } else {
-        stopFriendsTokenPolling();
       }
       document.querySelectorAll('.nav-link').forEach(a => {
         a.classList.toggle('text-neon-cyan', a.getAttribute('data-page') === pageId);
