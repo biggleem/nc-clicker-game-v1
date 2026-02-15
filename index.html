@@ -1210,7 +1210,7 @@
               <span class="text-[9px] text-gray-500 uppercase tracking-wider">Players you can send to</span>
               <button type="button" id="send-refresh-players-btn" class="py-1 px-2 border border-gray-500 text-gray-400 rounded text-[8px] hover:bg-gray-700">REFRESH</button>
             </div>
-            <div id="send-players-list" class="flex flex-wrap gap-1.5 min-h-[32px] max-h-24 overflow-y-auto p-1 rounded border border-gray-700 bg-black/40">
+            <div id="send-players-list" class="flex flex-col gap-1.5 min-h-[32px] max-h-48 overflow-y-auto p-1 rounded border border-gray-700 bg-black/40">
               <span class="text-[9px] text-gray-500">Tap a player to fill recipient.</span>
             </div>
           </div>
@@ -3576,16 +3576,23 @@
       if (!supabase) { listEl.innerHTML = '<span class="text-[9px] text-gray-500">Leaderboard not available.</span>'; return; }
       supabase.from('leaderboard').select('id, name, ref_code, player_id, wallet_address').not('ref_code', 'eq', null).limit(150).then(function(r) {
         if (r.error || !r.data) { listEl.innerHTML = '<span class="text-[9px] text-gray-500">Could not load players.</span>'; return; }
-        var rows = (r.data || []).filter(function(row) {
+        var filtered = (r.data || []).filter(function(row) {
           var pid = (row.player_id || '').toString();
           var w = (row.wallet_address || '').toString();
           return pid !== me && w !== me;
+        });
+        var seen = {};
+        var rows = filtered.filter(function(row) {
+          var code = (row.ref_code || '').trim().toUpperCase();
+          if (!code || seen[code]) return false;
+          seen[code] = true;
+          return true;
         });
         if (rows.length === 0) { listEl.innerHTML = '<span class="text-[9px] text-gray-500">No other players with codes yet. Ask friends to open the game and share their code.</span>'; return; }
         listEl.innerHTML = rows.map(function(row) {
           var name = (row.name || 'Player').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
           var code = (row.ref_code || '').replace(/"/g, '&quot;');
-          return '<button type="button" class="send-player-chip py-1 px-2 rounded border border-gray-600 text-gray-300 text-[9px] hover:border-neon-cyan hover:text-neon-cyan hover:bg-neon-cyan/10 text-left" data-ref="' + code + '">' + name + ' <span class="text-gray-500 font-mono">' + (row.ref_code || '') + '</span></button>';
+          return '<button type="button" class="send-player-chip w-full py-2 px-3 rounded border border-gray-600 text-gray-300 text-[9px] hover:border-neon-cyan hover:text-neon-cyan hover:bg-neon-cyan/10 text-left flex items-center justify-between gap-2" data-ref="' + code + '">' + '<span class="min-w-0 truncate">' + name + '</span>' + ' <span class="text-gray-500 font-mono shrink-0">' + (row.ref_code || '') + '</span></button>';
         }).join('');
         listEl.querySelectorAll('.send-player-chip').forEach(function(btn) {
           btn.addEventListener('click', function() {
@@ -4176,11 +4183,18 @@
             list.innerHTML = '<li class="text-gray-500">No friends added by code yet. Enter a code above.</li>';
             return;
           }
-          var codes = r.data.map(function(e) { return (e.friend_ref_code || '').trim(); }).filter(Boolean);
+          var seen = {};
+          var uniqueFriends = r.data.filter(function(e) {
+            var code = (e.friend_ref_code || '').trim().toUpperCase();
+            if (!code || seen[code]) return false;
+            seen[code] = true;
+            return true;
+          });
+          var codes = uniqueFriends.map(function(e) { return (e.friend_ref_code || '').trim(); }).filter(Boolean);
           var cache = getFriendTokenCache();
           var tokensByCode = {};
           codes.forEach(function(c) { var u = c.toUpperCase(); tokensByCode[u] = cache.byRefCode[u] != null ? cache.byRefCode[u] : null; });
-          renderAddedList(r.data, tokensByCode);
+          renderAddedList(uniqueFriends, tokensByCode);
           if (codes.length > 0) {
             supabase.from('leaderboard').select('ref_code, tokens').in('ref_code', codes).then(function(lr) {
               if (lr.data) {
@@ -4189,7 +4203,7 @@
                 Object.keys(tokensByCode).forEach(function(k) { byRef[k] = tokensByCode[k]; });
                 mergeFriendTokenCache(null, byRef);
               }
-              renderAddedList(r.data, tokensByCode);
+              renderAddedList(uniqueFriends, tokensByCode);
               subscribeFriendsLeaderboardRealtime();
               if (typeof subscribeFriendRequestsRealtime === 'function') subscribeFriendRequestsRealtime();
             });
