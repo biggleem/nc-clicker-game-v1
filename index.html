@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <!-- Bump this on every deploy so devices get updates (script below reloads if server version is newer) -->
-  <meta name="app-version" content="2">
+  <meta name="app-version" content="4">
   <!-- Fix GitHub Pages: base URL so scripts/assets load from repo root (e.g. /nc-clicker-game-v1/) -->
   <script>
     (function(){
@@ -384,6 +384,10 @@
             <input type="checkbox" id="wallet-setting-reduced-motion" class="rounded border-2 border-gray-500 bg-black text-neon-cyan focus:ring-neon-cyan" />
             <span id="wallet-setting-reduced-motion-label" class="text-[9px] text-gray-300">Off</span>
           </label>
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
+          <span class="text-[10px] text-gray-400">Get latest version:</span>
+          <button type="button" id="wallet-settings-reload-app" class="py-1.5 px-3 border-2 border-neon-yellow text-neon-yellow rounded text-[9px] hover:bg-neon-yellow/10">RELOAD APP</button>
         </div>
       </div>
       <div class="mt-4 pt-3 border-t border-gray-700">
@@ -1660,6 +1664,7 @@
           if (refCode) {
             supabase.from('leaderboard').update({ ref_code: refCode, updated_at: new Date().toISOString() }).eq('id', row.id).then(function() {});
           }
+          if (typeof subscribeTokenReceivedRealtime === 'function') subscribeTokenReceivedRealtime();
           if (cb) cb(row);
           return;
         }
@@ -1680,6 +1685,7 @@
           else { payload.wallet_address = me; payload.player_id = me; }
           supabase.from('leaderboard').insert(payload).then(function(ir) {
             if (ir.error) { if (cb) cb(null); return; }
+            if (typeof subscribeTokenReceivedRealtime === 'function') subscribeTokenReceivedRealtime();
             if (cb) cb(ir.data && ir.data[0] ? { id: ir.data[0].id, tokens: ir.data[0].tokens != null ? ir.data[0].tokens : 0 } : null);
           });
         }
@@ -2368,6 +2374,7 @@
       if (refEl) refEl.textContent = refCode;
       if (typeof subscribeReferralsRealtime === 'function') subscribeReferralsRealtime();
       if (typeof subscribeFriendRequestsRealtime === 'function') subscribeFriendRequestsRealtime();
+      if (typeof subscribeTokenReceivedRealtime === 'function') subscribeTokenReceivedRealtime();
     }
     function loadLeaderboardPvp() {
       var supabase = window.supabaseClient;
@@ -3567,9 +3574,13 @@
           if (fromRow.error || !fromRow.data) { sendFeedback.textContent = 'Your internal wallet not found. Connect wallet or open Wallet tab, then try again.'; sendFeedback.classList.add('text-neon-pink'); sendTokensBtn.disabled = false; return; }
           var looksLikeRef = /^REF[A-Z0-9]{4,}$/i.test(toInput);
           var toResult = looksLikeRef
-            ? await supabase.from('leaderboard').select('id, tokens, name, ref_code').ilike('ref_code', toInput.trim().toUpperCase()).limit(1)
-            : await supabase.from('leaderboard').select('id, tokens').ilike('wallet_address', toInput.trim()).limit(1);
+            ? await supabase.from('leaderboard').select('id, tokens, name, ref_code, player_id, wallet_address').ilike('ref_code', toInput.trim().toUpperCase()).limit(1)
+            : await supabase.from('leaderboard').select('id, tokens, player_id, wallet_address').ilike('wallet_address', toInput.trim()).limit(1);
           var toRow = { data: toResult.data && toResult.data[0] ? toResult.data[0] : null, error: toResult.error };
+          if ((toRow.error || !toRow.data) && !looksLikeRef) {
+            var byPlayer = await supabase.from('leaderboard').select('id, tokens, name, ref_code, player_id, wallet_address').eq('player_id', toInput.trim()).maybeSingle();
+            if (byPlayer.data) toRow = { data: byPlayer.data, error: null };
+          }
           if (toRow.error || !toRow.data || !toRow.data.id) { sendFeedback.textContent = 'Recipient not found. They need to open the game and have a leaderboard row.'; sendFeedback.classList.add('text-neon-pink'); sendTokensBtn.disabled = false; return; }
           var toCurrent = (toRow.data.tokens != null) ? Number(toRow.data.tokens) : 0;
           tokens -= amount;
@@ -3579,6 +3590,16 @@
           var toNewBalance = toCurrent + amount;
           await supabase.from('leaderboard').update({ tokens: ourNewBalance, updated_at: new Date().toISOString() }).eq('id', fromRow.data.id);
           await supabase.from('leaderboard').update({ tokens: toNewBalance, updated_at: new Date().toISOString() }).eq('id', toRow.data.id);
+          var senderName = (typeof getPlayerName === 'function' ? getPlayerName() : null) || 'Someone';
+          var pid = (toRow.data.player_id || '').toString().trim();
+          var wid = (toRow.data.wallet_address || '').toString().trim();
+          var recipientIds = [];
+          if (pid) recipientIds.push(pid);
+          if (wid && wid !== pid) recipientIds.push(wid);
+          if (recipientIds.length === 0 && (pid || wid)) recipientIds.push(pid || wid);
+          recipientIds.forEach(function(recipientId) {
+            if (recipientId) supabase.from('token_received_notifications').insert({ recipient_player_id: recipientId, sender_name: senderName, amount: amount }).then(function() {});
+          });
           var toLabel = looksLikeRef ? (toRow.data.name || toInput) : toInput.slice(0, 8) + '…';
           sendFeedback.textContent = 'Sent ' + amount + ' tokens to ' + toLabel;
           sendFeedback.classList.add('text-neon-green');
@@ -3602,25 +3623,33 @@
       var me = typeof getPvpPlayerId === 'function' ? getPvpPlayerId() : null;
       var supabase = window.supabaseClient;
       if (!supabase) { listEl.innerHTML = '<span class="text-[9px] text-gray-500">Leaderboard not available.</span>'; return; }
-      supabase.from('leaderboard').select('id, name, ref_code, player_id, wallet_address').not('ref_code', 'eq', null).limit(150).then(function(r) {
+      supabase.from('leaderboard').select('id, name, ref_code, player_id, wallet_address').not('name', 'is', null).limit(200).then(function(r) {
         if (r.error || !r.data) { listEl.innerHTML = '<span class="text-[9px] text-gray-500">Could not load players.</span>'; return; }
+        var meNorm = (me + '').trim().toLowerCase();
+        var myRefCode = (localStorage.getItem('tokenClicker_refCode') || '').trim().toUpperCase();
         var filtered = (r.data || []).filter(function(row) {
-          var pid = (row.player_id || '').toString();
-          var w = (row.wallet_address || '').toString();
-          return pid !== me && w !== me;
+          var pid = (row.player_id || '').toString().trim().toLowerCase();
+          var w = (row.wallet_address || '').toString().trim().toLowerCase();
+          var ref = (row.ref_code || '').trim().toUpperCase();
+          if (meNorm && (pid === meNorm || w === meNorm)) return false;
+          if (myRefCode && ref && ref === myRefCode) return false;
+          return true;
         });
         var seen = {};
         var rows = filtered.filter(function(row) {
           var code = (row.ref_code || '').trim().toUpperCase();
-          if (!code || seen[code]) return false;
-          seen[code] = true;
+          var key = code || (row.player_id || '').toString() || (row.wallet_address || '').toString();
+          if (!key || seen[key]) return false;
+          seen[key] = true;
           return true;
         });
-        if (rows.length === 0) { listEl.innerHTML = '<span class="text-[9px] text-gray-500">No other players with codes yet. Ask friends to open the game and share their code.</span>'; return; }
+        if (rows.length === 0) { listEl.innerHTML = '<span class="text-[9px] text-gray-500">No other players yet. Ask friends to open the game and set their name.</span>'; return; }
         listEl.innerHTML = rows.map(function(row) {
           var name = (row.name || 'Player').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-          var code = (row.ref_code || '').replace(/"/g, '&quot;');
-          return '<button type="button" class="send-player-chip w-full py-2 px-3 rounded border border-gray-600 text-gray-300 text-[9px] hover:border-neon-cyan hover:text-neon-cyan hover:bg-neon-cyan/10 text-left flex items-center justify-between gap-2" data-ref="' + code + '">' + '<span class="min-w-0 truncate">' + name + '</span>' + ' <span class="text-gray-500 font-mono shrink-0">' + (row.ref_code || '') + '</span></button>';
+          var sendTo = (row.ref_code || '').trim() || (row.wallet_address || '').toString() || (row.player_id || '').toString();
+          var label = (row.ref_code || '').trim() || (row.wallet_address || '').slice(0, 8) + '…' || (row.player_id || '').slice(0, 12) + '…';
+          var sendToEsc = (sendTo || '').replace(/"/g, '&quot;');
+          return '<button type="button" class="send-player-chip w-full py-2 px-3 rounded border border-gray-600 text-gray-300 text-[9px] hover:border-neon-cyan hover:text-neon-cyan hover:bg-neon-cyan/10 text-left flex items-center justify-between gap-2" data-ref="' + sendToEsc + '">' + '<span class="min-w-0 truncate">' + name + '</span>' + ' <span class="text-gray-500 font-mono shrink-0">' + (label || '') + '</span></button>';
         }).join('');
         listEl.querySelectorAll('.send-player-chip').forEach(function(btn) {
           btn.addEventListener('click', function() {
@@ -3969,6 +3998,59 @@
         friendRequestsChannel = null;
       }
     }
+    var tokenReceivedChannel = null;
+    var tokenReceivedRealtimeFailed = false;
+    function subscribeTokenReceivedRealtime() {
+      var supabase = window.supabaseClient;
+      var me = typeof getPvpPlayerId === 'function' ? getPvpPlayerId() : null;
+      if (!supabase || !me || (me + '').trim() === '' || tokenReceivedChannel || tokenReceivedRealtimeFailed) return;
+      try {
+        var meId = (me + '').trim();
+        var filterVal = /^[a-zA-Z0-9_-]+$/.test(meId) ? meId : ('"' + meId.replace(/"/g, '""') + '"');
+        var ch = supabase.channel('token-received-' + meId.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64)).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'token_received_notifications', filter: 'recipient_player_id=eq.' + filterVal }, function(payload) {
+          var row = payload.new;
+          if (!row || (row.recipient_player_id || '').trim() !== meId) return;
+          var senderName = (row.sender_name || 'Someone').trim();
+          var amt = row.amount != null ? parseInt(row.amount, 10) : 0;
+          var msg = 'You received ' + (amt > 0 ? amt + ' tokens from ' + senderName : 'tokens from ' + senderName) + '.';
+          if (typeof syncTokensFromLeaderboard === 'function') syncTokensFromLeaderboard(function() {
+            try { if (typeof pushNotification === 'function') pushNotification(msg); } catch (e) {}
+          });
+        });
+        tokenReceivedChannel = ch;
+        ch.subscribe(function(status) {
+          if (status === 'CHANNEL_ERROR') { tokenReceivedChannel = null; tokenReceivedRealtimeFailed = true; }
+        });
+      } catch (e) {
+        tokenReceivedRealtimeFailed = true;
+      }
+    }
+    function syncTokensFromLeaderboard(cb) {
+      var me = typeof getPvpPlayerId === 'function' ? getPvpPlayerId() : null;
+      var supabase = window.supabaseClient;
+      if (!me || !supabase) { if (cb) cb(); return; }
+      var isGuest = (me + '').indexOf('guest_') === 0;
+      var q = isGuest
+        ? supabase.from('leaderboard').select('tokens').eq('player_id', me).maybeSingle()
+        : supabase.from('leaderboard').select('tokens').ilike('wallet_address', me).limit(1);
+      q.then(function(r) {
+        var row = isGuest ? r.data : (r.data && r.data[0] ? r.data[0] : null);
+        if (!row && !isGuest && r.data && r.data[0]) row = r.data[0];
+        if (row && row.tokens != null) {
+          var serverTokens = Math.max(0, Number(row.tokens));
+          tokens = serverTokens;
+          if (typeof save === 'function') save();
+          if (typeof updateUI === 'function') updateUI();
+        }
+        if (cb) cb();
+      }).catch(function() { if (cb) cb(); });
+    }
+    function unsubscribeTokenReceivedRealtime() {
+      if (window.supabaseClient && tokenReceivedChannel) {
+        try { window.supabaseClient.removeChannel(tokenReceivedChannel); } catch (e) {}
+        tokenReceivedChannel = null;
+      }
+    }
     var friendsPollInterval = null;
     function startFriendsTokenPolling() {
       if (friendsPollInterval) return;
@@ -4015,6 +4097,7 @@
               renderInvitedList(r.data, tokensByWallet);
               subscribeFriendsLeaderboardRealtime();
               if (typeof subscribeFriendRequestsRealtime === 'function') subscribeFriendRequestsRealtime();
+              if (typeof subscribeTokenReceivedRealtime === 'function') subscribeTokenReceivedRealtime();
             });
           }
           function renderInvitedList(data, tokensByWallet) {
@@ -4234,6 +4317,7 @@
               renderAddedList(uniqueFriends, tokensByCode);
               subscribeFriendsLeaderboardRealtime();
               if (typeof subscribeFriendRequestsRealtime === 'function') subscribeFriendRequestsRealtime();
+              if (typeof subscribeTokenReceivedRealtime === 'function') subscribeTokenReceivedRealtime();
             });
           }
           function renderAddedList(data, tokensByCode) {
@@ -4332,15 +4416,38 @@
       if (!name || !wallet) return;
       var supabase = window.supabaseClient;
       if (!supabase) return;
+      function revertNameFromServer() {
+        var isGuest = (wallet + '').indexOf('guest_') === 0;
+        var q = isGuest ? supabase.from('leaderboard').select('name').eq('player_id', wallet).maybeSingle() : supabase.from('leaderboard').select('name').eq('wallet_address', wallet).maybeSingle();
+        q.then(function(rr) {
+          var serverName = rr.data && rr.data.name ? rr.data.name : '';
+          if (typeof setPlayerName === 'function') setPlayerName(serverName);
+          if (typeof updateProfileDisplayName === 'function') updateProfileDisplayName();
+          if (typeof updateUI === 'function') updateUI();
+          try { if (typeof pushNotification === 'function') pushNotification('That name is already taken. Choose another.'); } catch (e) {}
+        });
+      }
       supabase.from('leaderboard').select('id').eq('wallet_address', wallet).maybeSingle().then(function(r) {
         var row = r.data;
-        if (row) {
-          supabase.from('leaderboard').update({ name: name, updated_at: new Date().toISOString(), ref_code: localStorage.getItem('tokenClicker_refCode') || null, player_id: wallet }).eq('id', row.id).then(function() {});
+        if (!row) {
+          supabase.from('leaderboard').select('id').eq('player_id', wallet).maybeSingle().then(function(r2) { row = r2.data; doPersist(row); });
         } else {
-          supabase.from('leaderboard').insert({ name: name, wallet_address: wallet, player_id: wallet, tokens: 0, ref_code: localStorage.getItem('tokenClicker_refCode') || null }).then(function() {});
+          doPersist(row);
         }
-        if (localStorage.getItem('tokenClicker_invitedBy') && typeof registerReferralIfNeeded === 'function') registerReferralIfNeeded(name);
       });
+      function doPersist(row) {
+        if (row) {
+          supabase.from('leaderboard').update({ name: name, updated_at: new Date().toISOString(), ref_code: localStorage.getItem('tokenClicker_refCode') || null, player_id: wallet }).eq('id', row.id).then(function(ur) {
+            if (ur.error && ur.error.code === '23505') revertNameFromServer();
+            else if (!ur.error && localStorage.getItem('tokenClicker_invitedBy') && typeof registerReferralIfNeeded === 'function') registerReferralIfNeeded(name);
+          });
+        } else {
+          supabase.from('leaderboard').insert({ name: name, wallet_address: wallet, player_id: wallet, tokens: 0, ref_code: localStorage.getItem('tokenClicker_refCode') || null }).then(function(ir) {
+            if (ir.error && ir.error.code === '23505') revertNameFromServer();
+            else if (!ir.error && localStorage.getItem('tokenClicker_invitedBy') && typeof registerReferralIfNeeded === 'function') registerReferralIfNeeded(name);
+          });
+        }
+      }
     }
     function getInGameTokenBalance() {
       if (typeof tokens !== 'undefined') return Math.max(0, parseInt(tokens, 10));
@@ -4448,6 +4555,7 @@
       if (typeof loadFriendsAddedByCode === 'function') loadFriendsAddedByCode();
       startFriendsTokenPolling();
       if (typeof subscribeFriendRequestsRealtime === 'function') subscribeFriendRequestsRealtime();
+      if (typeof subscribeTokenReceivedRealtime === 'function') subscribeTokenReceivedRealtime();
     }
     function closeFriendsModal() {
       var modal = document.getElementById('friends-modal');
@@ -4468,6 +4576,7 @@
       if (app) app.classList.add('hidden');
       showOnboardingStep(0);
     });
+    document.getElementById('wallet-settings-reload-app') && document.getElementById('wallet-settings-reload-app').addEventListener('click', function() { location.reload(); });
     document.getElementById('wallet-settings-btn') && document.getElementById('wallet-settings-btn').addEventListener('click', function() {
       var modal = document.getElementById('profile-name-modal');
       var input = document.getElementById('profile-name-input');

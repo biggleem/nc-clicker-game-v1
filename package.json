@@ -1,6 +1,6 @@
 {
   "name": "nc-clicker-game-v1",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "1N Blockchain Token Clicker - $CARD on TON",
   "type": "module",
   "scripts": {

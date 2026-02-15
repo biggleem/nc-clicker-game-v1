@@ -257,3 +257,53 @@ COMMENT ON COLUMN public.leaderboard.player_id IS 'Unique player id: wallet_addr
 -- ========== 018: Rooms player ready (both click Ready → 5s countdown → race) ==========
 ALTER TABLE public.rooms ADD COLUMN IF NOT EXISTS player1_ready BOOLEAN DEFAULT false;
 ALTER TABLE public.rooms ADD COLUMN IF NOT EXISTS player2_ready BOOLEAN DEFAULT false;
+
+
+-- ========== 019: Token received notifications (notify recipient when someone sends them tokens) ==========
+CREATE TABLE IF NOT EXISTS public.token_received_notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recipient_player_id TEXT NOT NULL,
+  sender_name TEXT,
+  amount INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE public.token_received_notifications ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can insert token_received_notifications" ON public.token_received_notifications;
+CREATE POLICY "Anyone can insert token_received_notifications"
+  ON public.token_received_notifications FOR INSERT TO anon WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Anyone can read token_received_notifications" ON public.token_received_notifications;
+CREATE POLICY "Anyone can read token_received_notifications"
+  ON public.token_received_notifications FOR SELECT TO anon USING (true);
+
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.token_received_notifications;
+EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM NOT LIKE '%already%member%' THEN RAISE; END IF;
+END $$;
+
+
+-- ========== 020: Unique leaderboard names (case-insensitive) ==========
+-- Resolve existing duplicates: keep first row per name, append suffix to others
+WITH dupes AS (
+  SELECT id, name, ROW_NUMBER() OVER (PARTITION BY LOWER(TRIM(name)) ORDER BY updated_at NULLS LAST, id) AS rn
+  FROM public.leaderboard
+),
+to_update AS (
+  SELECT id, name, (name || '#' || LOWER(SUBSTRING(id::text, 1, 8))) AS new_name
+  FROM dupes
+  WHERE rn > 1
+)
+UPDATE public.leaderboard AS lb
+SET name = to_update.new_name
+FROM to_update
+WHERE lb.id = to_update.id;
+
+-- Enforce unique display names (case-insensitive, trimmed)
+DROP INDEX IF EXISTS public.idx_leaderboard_name_unique;
+CREATE UNIQUE INDEX idx_leaderboard_name_unique
+  ON public.leaderboard (LOWER(TRIM(name)));
+
+COMMENT ON INDEX public.idx_leaderboard_name_unique IS 'Ensures no two users have the same display name (case-insensitive).';
