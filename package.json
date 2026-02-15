@@ -9,7 +9,10 @@
     "serve": "npx http-server . -p 3001 -c-1",
     "start": "npx http-server . -p 3001 -c-1",
     "open": "node serve-and-open.cjs",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:link": "supabase link --project-ref kjzuyncvahefckizbigb",
+    "db:push": "supabase db push",
+    "db:migrate:017": "node scripts/run-migration-017.cjs"
   },
   "dependencies": {
     "@tonconnect/sdk": "^2.2.0"

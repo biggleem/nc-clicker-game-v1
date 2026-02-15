@@ -1,0 +1,159 @@
+# PRD: Pending Friend Requests – Test Between Two Brand-New Guest Accounts (No TON Wallet)
+
+## Overview
+
+This document defines a **manual test specification** (and acceptance criteria) for the **pending friend-requests flow** when both parties use **brand-new accounts with no TON wallet connected** (guest accounts only). It is used to verify that sending and accepting friend requests works end-to-end for guests.
+
+## Scope
+
+- **In scope:** Two users, each in a fresh session (incognito or different device), no wallet connected. One user sends a friend request by entering the other’s invite code; the other sees the pending request and accepts.
+- **Out of scope:** TON wallet–connected users, referral tracking, PVP duels, or other features.
+
+## Prerequisites
+
+- App deployed or running locally (e.g. `npm run serve`).
+- Supabase project with tables: `leaderboard`, `friend_requests`, `friends_by_code` (migrations 010, 011, and **017** applied). Migration **017** adds `leaderboard.player_id` so that guest users (no wallet) can receive friend requests; without it you may see "column leaderboard.player_id does not exist".
+- Two independent browsing contexts (two incognito windows, or two devices, or two browsers) so that each has its own `localStorage` and guest id.
+
+## Personas
+
+- **Guest A (Receiver):** Will receive a friend request. Must have saved their name at least once so their invite code is synced to the leaderboard.
+- **Guest B (Sender):** Will send the friend request by entering Guest A’s invite code.
+
+## Critical Precondition (Why “Pending Requests Not Working” Often Fails)
+
+Both users **must** have opened **Wallet → Settings**, entered a name, and clicked **SAVE** at least once before testing. This:
+
+1. Creates or updates their **leaderboard** row (`wallet_address` / `player_id` = guest id, `ref_code` from localStorage).
+2. Ensures **add-by-code** can resolve the invite code to a row and a valid `to_wallet` (guest id).
+3. Ensures **accept** can resolve both parties’ ref codes from the leaderboard (by `wallet_address` and `player_id`).
+
+If either user has never saved their name, the receiver’s code may not exist in the leaderboard, or the receiver’s `to_wallet` may be missing, and pending requests will not work.
+
+---
+
+## Test Scenario: Two Brand-New Guest Accounts, No TON Wallet
+
+### Step 1 – Guest A (Receiver): Create identity and get invite code
+
+1. Open the app in **Context 1** (e.g. Incognito Window 1). Do **not** connect a TON wallet.
+2. Confirm the app loads (guest id is created automatically, e.g. `guest_xxxxxxxx` in localStorage).
+3. Go to **Wallet → Settings**.
+4. Enter a display name (e.g. `GuestAlice`), click **SAVE**.
+5. Open **Friends** (or Wallet tab where invite code is shown). Note the **invite code** (e.g. `REFABC123`). Optionally use “Scan QR” or copy the code.
+6. Leave this tab/window open (or remember the code for Step 3).
+
+**Expected:** No errors. Invite code is visible and stable after save.
+
+---
+
+### Step 2 – Guest B (Sender): Create identity
+
+1. Open the app in **Context 2** (e.g. Incognito Window 2 or another device). Do **not** connect a TON wallet.
+2. Confirm the app loads (a different guest id is created).
+3. Go to **Wallet → Settings**, enter a display name (e.g. `GuestBob`), click **SAVE**.
+4. Navigate to **Friends**.
+
+**Expected:** No errors. Guest B has a different invite code from Guest A.
+
+---
+
+### Step 3 – Guest B: Send friend request to Guest A
+
+1. In **Context 2** (Guest B), in the Friends UI find the “Add friend by invite code” input.
+2. Enter **Guest A’s invite code** exactly (e.g. `REFABC123`). Case may be normalized to uppercase by the app.
+3. Click **ADD FRIEND** (or press Enter).
+
+**Expected:**
+
+- Message: **“Request sent to GuestAlice.”** (or equivalent success text).
+- No message such as: “Unknown invite code”, “Invalid or your own code”, “Set your name in Wallet → Settings first”, or “Database …”.
+
+**If you see “Unknown invite code”:** Guest A has not saved their name in Wallet → Settings, or the leaderboard row has no `ref_code`. Have Guest A open Wallet → Settings and SAVE again, then retry.
+
+**If you see “Invalid or your own code”:** The app may be resolving the code to a row with no `wallet_address` and no `player_id` (old bug). Ensure backend/code uses `player_id` when `wallet_address` is null for the target (see implementation note below).
+
+---
+
+### Step 4 – Guest A: See pending request
+
+1. In **Context 1** (Guest A), open **Friends**.
+2. Look for a **“Pending requests”** (or similar) section. It may be hidden if there are no pending requests.
+
+**Expected:**
+
+- The **Pending requests** section is **visible**.
+- One row appears: **GuestBob** (or Guest B’s name) with **ACCEPT** and **REJECT** buttons.
+
+**If the section is hidden or empty:**  
+Check that `friend_requests` has a row with `to_wallet` = Guest A’s `getPvpPlayerId()` (e.g. `guest_xxx`) and `status = 'pending'`. If the row exists but the UI doesn’t show it, the bug is in `loadFriendRequests()` (e.g. wrong `me` or wrong filter). If the row doesn’t exist, the bug is in add-by-code (e.g. wrong `to_wallet` or insert failing).
+
+---
+
+### Step 5 – Guest A: Accept the request
+
+1. In **Context 1**, click **ACCEPT** on the pending request from Guest B.
+
+**Expected:**
+
+- Toast/notification: **“You are now friends with GuestBob”** (or equivalent).
+- The pending request disappears from the Pending section.
+- In the **Friends** list, **GuestBob** appears (with invite code and optional token count).
+
+**If you see “Could not accept: … invite code not synced”:** Sender (Guest B) has not saved their name in Wallet → Settings, so their `ref_code` is not in the leaderboard. Have Guest B save name and retry (you may need to send a new request if the first was rejected).
+
+**If you see “Could not accept: save your name in Wallet → Settings so your invite code is synced”:** Receiver (Guest A) has no `ref_code` on their leaderboard row. Guest A should open Wallet → Settings and SAVE again, then try ACCEPT again (or receive a new request).
+
+---
+
+### Step 6 – Guest B: See Guest A in friends list
+
+1. In **Context 2** (Guest B), open **Friends** and look at the friends list.
+
+**Expected:**
+
+- **GuestAlice** (or Guest A’s name) appears in the list with their invite code.
+- No duplicate entries. Optional: token count shown if implemented.
+
+---
+
+## Acceptance Criteria (Summary)
+
+| # | Criterion | Pass when |
+|---|-----------|-----------|
+| 1 | Guest can have an invite code | After saving name in Wallet → Settings, invite code is visible and stored in leaderboard. |
+| 2 | Second guest can send request by code | Entering first guest’s code and clicking ADD FRIEND shows “Request sent to [name].” and inserts a row in `friend_requests` with `to_wallet` = first guest’s id. |
+| 3 | First guest sees pending request | Pending section is visible and shows the sender’s name and ACCEPT/REJECT. |
+| 4 | First guest can accept | Clicking ACCEPT shows success message and adds both users to `friends_by_code`; request status becomes `accepted`. |
+| 5 | Both see each other in friends list | After accept, both contexts show the other user in the Friends list. |
+
+---
+
+## Edge Cases to Cover (Optional)
+
+- **Same code again:** Guest B enters Guest A’s code twice. Second time: “Request already sent.” (or unique constraint handling).
+- **Own code:** Guest A enters their own invite code. Message: “You can’t add yourself.”
+- **Unknown code:** Enter a code that doesn’t exist in the leaderboard. Message instructs the other user to open the app and save their name so the code is synced.
+- **Empty code:** Click ADD FRIEND with empty input. Message: “Enter an invite code.”
+
+---
+
+## Implementation Notes (For Developers)
+
+- **Add-by-code:** Lookup leaderboard by `ref_code` (e.g. `ilike('ref_code', code)`). Use **`to_wallet = row.wallet_address || row.player_id`** so that guests (who may have `wallet_address` null in some data) can receive requests. Insert into `friend_requests`: `from_wallet`, `to_wallet`, `from_name`, `to_name`, `status: 'pending'`.
+- **Load pending:** `friend_requests` where `to_wallet = getPvpPlayerId()` and `status = 'pending'`. For guests, `getPvpPlayerId()` returns `guest_xxx`; ensure `to_wallet` in the DB is the same guest id.
+- **Accept:** Resolve both sender and receiver ref codes from `leaderboard` by both `wallet_address` and `player_id` (e.g. two queries merged), then insert into `friends_by_code` and update request to `accepted`. Both parties must have a leaderboard row with `ref_code` for accept to succeed.
+
+---
+
+## Automated E2E Test
+
+- **Spec:** `tests/pending-requests-two-guests.spec.js` (Playwright, two browser contexts).
+- **Run:** `npm run serve` then `BASE_URL=http://localhost:3001 npm run test:e2e -- tests/pending-requests-two-guests.spec.js`
+- **Windows PowerShell:** `$env:BASE_URL='http://localhost:3001'; npm run test:e2e -- tests/pending-requests-two-guests.spec.js`
+
+## Document Info
+
+- **Purpose:** PRD / test specification for “pending requests not working” when testing with two brand-new accounts and no TON wallet.
+- **Use:** Manual QA, or to derive automated E2E tests (e.g. Playwright with two browser contexts or two profiles).
+- **Last updated:** 2025 (adjust as needed).
