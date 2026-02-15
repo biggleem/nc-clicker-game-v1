@@ -1112,10 +1112,18 @@
       <div id="wallet-panel-send" class="wallet-panel hidden" data-wallet-panel="send">
         <div class="bg-pixel-panel border-2 border-neon-yellow/30 p-4 rounded mb-4" id="send-area">
           <div class="text-gray-500 text-[10px] mb-2">SEND TOKENS TO PLAYER</div>
-          <p class="text-[10px] text-gray-400 mb-2">Send in-game tokens to another player by their TON wallet address. They must have opened the game at least once (have a leaderboard row).</p>
+          <p class="text-[10px] text-gray-400 mb-2">Send in-game tokens to another player. Enter their TON wallet address or their internal wallet code (e.g. REFABC123). They must have opened the game at least once.</p>
+          <div class="mb-3 p-2 rounded border-2 border-neon-cyan/40 bg-black/40">
+            <div class="text-[9px] text-gray-500 uppercase tracking-wider mb-1">Your internal wallet code</div>
+            <p class="text-[9px] text-gray-400 mb-1">Share this code so others can send you tokens. They enter it in the recipient field below.</p>
+            <div class="flex items-center gap-2 flex-wrap">
+              <code id="send-my-wallet-code" class="flex-1 min-w-0 text-neon-cyan text-[11px] font-mono break-all">—</code>
+              <button type="button" id="send-copy-my-code-btn" class="shrink-0 py-1.5 px-2 border-2 border-neon-cyan text-neon-cyan rounded text-[9px] hover:bg-neon-cyan/10">COPY</button>
+            </div>
+          </div>
           <div class="space-y-2 mb-2">
-            <label class="text-[9px] text-gray-500 uppercase tracking-wider block">Recipient wallet address</label>
-            <input type="text" id="send-to-address" placeholder="UQBH... or 0:..." class="w-full bg-black border-2 border-gray-600 rounded px-2 py-2 text-neon-cyan text-[10px] font-mono" spellcheck="false" />
+            <label class="text-[9px] text-gray-500 uppercase tracking-wider block">Recipient: wallet address or internal wallet code</label>
+            <input type="text" id="send-to-address" placeholder="UQBH... or REFABC123" class="w-full bg-black border-2 border-gray-600 rounded px-2 py-2 text-neon-cyan text-[10px] font-mono" spellcheck="false" />
           </div>
           <div class="flex gap-2 items-center flex-wrap">
             <input type="number" id="send-amount" min="1" placeholder="Amount" class="bg-black border-2 border-gray-600 rounded px-2 py-2 text-neon-cyan w-24 text-[10px]" />
@@ -1507,16 +1515,43 @@
     var lastTokensSyncAt = 0;
     var TOKENS_SYNC_INTERVAL_MS = 5000;
     function syncTokensToLeaderboard() {
-      var wallet = typeof getPvpPlayerId === 'function' ? getPvpPlayerId() : null;
-      if (!wallet || wallet.indexOf('guest_') === 0) return;
+      var me = typeof getPvpPlayerId === 'function' ? getPvpPlayerId() : null;
+      if (!me) return;
       var supabase = window.supabaseClient;
       if (!supabase || Date.now() - lastTokensSyncAt < TOKENS_SYNC_INTERVAL_MS) return;
       lastTokensSyncAt = Date.now();
-      supabase.from('leaderboard').select('id').eq('wallet_address', wallet).maybeSingle().then(function(r) {
+      var isGuest = me.indexOf('guest_') === 0;
+      var query = isGuest ? supabase.from('leaderboard').select('id').eq('player_id', me).maybeSingle() : supabase.from('leaderboard').select('id').eq('wallet_address', me).maybeSingle();
+      query.then(function(r) {
         var row = r.data;
         if (row) {
           supabase.from('leaderboard').update({ tokens: Math.max(0, tokens), updated_at: new Date().toISOString() }).eq('id', row.id).then(function() {});
         }
+      });
+    }
+    function ensureLeaderboardRow(cb) {
+      var me = typeof getPvpPlayerId === 'function' ? getPvpPlayerId() : null;
+      if (!me) { if (cb) cb(null); return; }
+      var supabase = window.supabaseClient;
+      if (!supabase) { if (cb) cb(null); return; }
+      var isGuest = me.indexOf('guest_') === 0;
+      var q = isGuest ? supabase.from('leaderboard').select('id, tokens').eq('player_id', me).maybeSingle() : supabase.from('leaderboard').select('id, tokens').eq('wallet_address', me).maybeSingle();
+      q.then(function(r) {
+        var row = r.data;
+        if (row) {
+          var serverTokens = row.tokens != null ? Number(row.tokens) : 0;
+          if (serverTokens > tokens) { tokens = Math.max(0, serverTokens); save(); if (typeof updateUI === 'function') updateUI(); }
+          if (cb) cb(row);
+          return;
+        }
+        var name = (typeof getPlayerName === 'function' ? getPlayerName() : null) || 'Player';
+        var refCode = (localStorage && localStorage.getItem('tokenClicker_refCode')) || null;
+        var payload = { name: name.slice(0, 100), tokens: Math.max(0, tokens), updated_at: new Date().toISOString(), ref_code: refCode };
+        if (isGuest) payload.player_id = me;
+        else { payload.wallet_address = me; payload.player_id = me; }
+        supabase.from('leaderboard').insert(payload).then(function(ir) {
+          if (cb) cb(ir.data ? { id: ir.data[0] && ir.data[0].id } : null);
+        });
       });
     }
     function save() {
@@ -2477,7 +2512,26 @@
         }
       }
       try { localStorage.setItem('tokenClicker_walletTab', tabId); } catch (e) {}
+      if (tabId === 'send') {
+        var code = localStorage.getItem('tokenClicker_refCode');
+        if (!code) { code = 'REF' + Math.random().toString(36).slice(2, 8).toUpperCase(); try { localStorage.setItem('tokenClicker_refCode', code); } catch (e) {} }
+        var codeEl = document.getElementById('send-my-wallet-code');
+        if (codeEl) codeEl.textContent = code || '—';
+      }
+      if (typeof ensureLeaderboardRow === 'function') ensureLeaderboardRow();
     }
+    document.getElementById('send-copy-my-code-btn') && document.getElementById('send-copy-my-code-btn').addEventListener('click', function() {
+      var codeEl = document.getElementById('send-my-wallet-code');
+      var code = codeEl ? codeEl.textContent.trim() : '';
+      if (code && code !== '—') {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code).then(function() {
+            var btn = document.getElementById('send-copy-my-code-btn');
+            if (btn) { btn.textContent = 'COPIED!'; setTimeout(function() { if (btn) btn.textContent = 'COPY'; }, 1500); }
+          }).catch(function() {});
+        }
+      }
+    });
     document.querySelectorAll('.wallet-tab-btn').forEach(function(btn) {
       btn.addEventListener('click', function() { showWalletTab(btn.getAttribute('data-wallet-tab')); });
     });
@@ -2486,7 +2540,6 @@
     var savedWalletTab = localStorage.getItem('tokenClicker_walletTab') || 'balance';
     if (document.querySelector('.wallet-tab-btn[data-wallet-tab="' + savedWalletTab + '"]')) showWalletTab(savedWalletTab);
     else if (savedWalletTab === 'connect') showWalletTab('connect');
-
     // Customize quick buffs modal
     var customizeBuffsEditing = [];
     function openCustomizeBuffsModal() {
@@ -3235,13 +3288,13 @@
     }
     if (sendTokensBtn && sendFeedback) {
       sendTokensBtn.addEventListener('click', async function() {
-        var toWallet = (sendToAddress && sendToAddress.value) ? sendToAddress.value.trim() : '';
+        var toInput = (sendToAddress && sendToAddress.value) ? sendToAddress.value.trim() : '';
         var amount = sendAmount ? parseInt(sendAmount.value, 10) : 0;
-        if (!toWallet) { sendFeedback.textContent = 'Enter recipient wallet address.'; sendFeedback.classList.remove('hidden'); sendFeedback.classList.remove('text-neon-green'); sendFeedback.classList.add('text-neon-pink'); return; }
+        if (!toInput) { sendFeedback.textContent = 'Enter recipient wallet address or ref code.'; sendFeedback.classList.remove('hidden'); sendFeedback.classList.remove('text-neon-green'); sendFeedback.classList.add('text-neon-pink'); return; }
         if (!amount || amount < 1) { sendFeedback.textContent = 'Enter amount (1+).'; sendFeedback.classList.remove('hidden'); sendFeedback.classList.remove('text-neon-green'); sendFeedback.classList.add('text-neon-pink'); return; }
-        var fromWallet = window.TonWallet && window.TonWallet.getAddress();
-        if (!fromWallet) { sendFeedback.textContent = 'Connect wallet first.'; sendFeedback.classList.remove('hidden'); sendFeedback.classList.remove('text-neon-green'); sendFeedback.classList.add('text-neon-pink'); return; }
-        if (fromWallet.toLowerCase() === toWallet.toLowerCase()) { sendFeedback.textContent = 'Cannot send to yourself.'; sendFeedback.classList.remove('hidden'); sendFeedback.classList.remove('text-neon-green'); sendFeedback.classList.add('text-neon-pink'); return; }
+        var me = typeof getPvpPlayerId === 'function' ? getPvpPlayerId() : null;
+        if (!me) { sendFeedback.textContent = 'Player id not set. Refresh and try again.'; sendFeedback.classList.remove('hidden'); sendFeedback.classList.add('text-neon-pink'); return; }
+        if (me.toLowerCase() === toInput.toLowerCase()) { sendFeedback.textContent = 'Cannot send to yourself.'; sendFeedback.classList.remove('hidden'); sendFeedback.classList.remove('text-neon-green'); sendFeedback.classList.add('text-neon-pink'); return; }
         if (tokens < amount) { sendFeedback.textContent = 'Not enough in-game balance.'; sendFeedback.classList.remove('hidden'); sendFeedback.classList.remove('text-neon-green'); sendFeedback.classList.add('text-neon-pink'); return; }
         var supabase = window.supabaseClient;
         if (!supabase) { sendFeedback.textContent = 'Leaderboard not available. Refresh and try again.'; sendFeedback.classList.remove('hidden'); sendFeedback.classList.add('text-neon-pink'); return; }
@@ -3250,10 +3303,17 @@
         sendFeedback.classList.remove('hidden');
         sendFeedback.classList.remove('text-neon-green', 'text-neon-pink');
         try {
-          var fromRow = await supabase.from('leaderboard').select('id, tokens').eq('wallet_address', fromWallet).maybeSingle();
-          if (fromRow.error || !fromRow.data) { sendFeedback.textContent = 'Your wallet not found on leaderboard. Play once and try again.'; sendFeedback.classList.add('text-neon-pink'); sendTokensBtn.disabled = false; return; }
-          var toRow = await supabase.from('leaderboard').select('id, tokens').eq('wallet_address', toWallet).maybeSingle();
-          if (toRow.error || !toRow.data || !toRow.data.id) { sendFeedback.textContent = 'Recipient wallet not found. They need to open the game at least once.'; sendFeedback.classList.add('text-neon-pink'); sendTokensBtn.disabled = false; return; }
+          var isGuest = me.indexOf('guest_') === 0;
+          var fromRow = isGuest
+            ? await supabase.from('leaderboard').select('id, tokens').eq('player_id', me).maybeSingle()
+            : await supabase.from('leaderboard').select('id, tokens').eq('wallet_address', me).maybeSingle();
+          if (fromRow.error || !fromRow.data) { sendFeedback.textContent = 'Your internal wallet not found. Open Wallet tab once and try again.'; sendFeedback.classList.add('text-neon-pink'); sendTokensBtn.disabled = false; return; }
+          var looksLikeRef = /^REF[A-Z0-9]{4,}$/i.test(toInput);
+          var toResult = looksLikeRef
+            ? await supabase.from('leaderboard').select('id, tokens, name, ref_code').ilike('ref_code', toInput.trim()).limit(1)
+            : await supabase.from('leaderboard').select('id, tokens').eq('wallet_address', toInput).maybeSingle();
+          var toRow = looksLikeRef ? { data: toResult.data && toResult.data[0] ? toResult.data[0] : null, error: toResult.error } : toResult;
+          if (toRow.error || !toRow.data || !toRow.data.id) { sendFeedback.textContent = 'Recipient not found. They need to open the game and have a leaderboard row.'; sendFeedback.classList.add('text-neon-pink'); sendTokensBtn.disabled = false; return; }
           var toCurrent = (toRow.data.tokens != null) ? Number(toRow.data.tokens) : 0;
           tokens -= amount;
           save();
@@ -3262,7 +3322,8 @@
           var toNewBalance = toCurrent + amount;
           await supabase.from('leaderboard').update({ tokens: ourNewBalance, updated_at: new Date().toISOString() }).eq('id', fromRow.data.id);
           await supabase.from('leaderboard').update({ tokens: toNewBalance, updated_at: new Date().toISOString() }).eq('id', toRow.data.id);
-          sendFeedback.textContent = 'Sent ' + amount + ' tokens to ' + toWallet.slice(0, 8) + '…';
+          var toLabel = looksLikeRef ? (toRow.data.name || toInput) : toInput.slice(0, 8) + '…';
+          sendFeedback.textContent = 'Sent ' + amount + ' tokens to ' + toLabel;
           sendFeedback.classList.add('text-neon-green');
           if (sendToAddress) sendToAddress.value = '';
           if (sendAmount) sendAmount.value = '';
@@ -3862,9 +3923,9 @@
       supabase.from('leaderboard').select('id').eq('wallet_address', wallet).maybeSingle().then(function(r) {
         var row = r.data;
         if (row) {
-          supabase.from('leaderboard').update({ name: name, updated_at: new Date().toISOString(), ref_code: localStorage.getItem('tokenClicker_refCode') || null }).eq('id', row.id).then(function() {});
+          supabase.from('leaderboard').update({ name: name, updated_at: new Date().toISOString(), ref_code: localStorage.getItem('tokenClicker_refCode') || null, player_id: wallet }).eq('id', row.id).then(function() {});
         } else {
-          supabase.from('leaderboard').insert({ name: name, wallet_address: wallet, tokens: 0, ref_code: localStorage.getItem('tokenClicker_refCode') || null }).then(function() {});
+          supabase.from('leaderboard').insert({ name: name, wallet_address: wallet, player_id: wallet, tokens: 0, ref_code: localStorage.getItem('tokenClicker_refCode') || null }).then(function() {});
         }
         if (localStorage.getItem('tokenClicker_invitedBy') && typeof registerReferralIfNeeded === 'function') registerReferralIfNeeded(name);
       });
@@ -4970,6 +5031,7 @@
       }
     });
     window.loadPvpRooms = loadPvpRooms;
+    setTimeout(function() { if (typeof ensureLeaderboardRow === 'function') ensureLeaderboardRow(); }, 2000);
 
     document.addEventListener('keydown', (e) => { if (e.key === 'Enter') e.preventDefault(); });
     setInterval(updateClicksPerSecond, 200);
