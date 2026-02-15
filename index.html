@@ -1140,6 +1140,7 @@
             <p class="text-[9px] text-gray-400 mb-1">Share this code so others can send you tokens. They enter it in the recipient field below.</p>
             <div class="flex items-center gap-2 flex-wrap">
               <code id="send-my-wallet-code" class="flex-1 min-w-0 text-neon-cyan text-[11px] font-mono break-all">—</code>
+              <button type="button" id="send-copy-my-code-btn" class="shrink-0 py-1.5 px-2 border-2 border-neon-cyan text-neon-cyan rounded text-[9px] hover:bg-neon-cyan/10">COPY</button>
             </div>
             <div class="mt-2 pt-2 border-t border-gray-700">
               <div class="text-[9px] text-gray-500 uppercase tracking-wider mb-1 text-center">Scan to send me tokens</div>
@@ -1156,16 +1157,6 @@
               <button type="button" id="send-scan-qr-btn" class="shrink-0 py-2 px-3 border-2 border-neon-cyan text-neon-cyan rounded text-[9px] hover:bg-neon-cyan/10" title="Scan QR code to fill recipient">📷 Scan QR</button>
             </div>
           </div>
-          <div class="space-y-2 mb-2">
-            <label class="text-[9px] text-gray-500 uppercase tracking-wider block">Recipient: wallet address or internal wallet code</label>
-            <div class="flex gap-2 items-center">
-              <input type="text" id="send-to-address" placeholder="UQBH... or REFABC123" class="flex-1 min-w-0 bg-black border-2 border-gray-600 rounded px-2 py-2 text-neon-cyan text-[10px] font-mono" spellcheck="false" />
-              <button type="button" id="send-copy-my-code-btn" class="shrink-0 py-2 px-3 border-2 border-neon-cyan text-neon-cyan rounded text-[9px] hover:bg-neon-cyan/10">COPY</button>
-            </div>
-            <div class="text-[9px] text-gray-500">
-              Your code: <code id="send-my-wallet-code-under" class="text-neon-cyan font-mono">—</code>
-            </div>
-          </div>
           <div class="mb-3">
             <div class="flex items-center justify-between gap-2 mb-1">
               <span class="text-[9px] text-gray-500 uppercase tracking-wider">Players you can send to</span>
@@ -1178,7 +1169,13 @@
           <div class="flex gap-2 items-center flex-wrap">
             <input type="number" id="send-amount" min="1" placeholder="Amount" class="bg-black border-2 border-gray-600 rounded px-2 py-2 text-neon-cyan w-24 text-[10px]" />
             <button type="button" id="send-max-btn" class="border-2 border-gray-500 text-gray-400 px-2 py-2 rounded text-[9px] hover:bg-gray-700 hover:border-gray-400">MAX</button>
-            <button type="button" id="send-tokens-btn" class="border-2 border-neon-yellow text-neon-yellow px-3 py-2 rounded text-[10px] hover:bg-neon-yellow/10 disabled:opacity-50">SEND</button>
+          </div>
+          <div class="space-y-2 mt-2 mb-2">
+            <label class="text-[9px] text-gray-500 uppercase tracking-wider block">Recipient: wallet address or internal wallet code</label>
+            <div class="flex gap-2 items-center">
+              <input type="text" id="send-to-address" placeholder="UQBH... or REFABC123" class="flex-1 min-w-0 bg-black border-2 border-gray-600 rounded px-2 py-2 text-neon-cyan text-[10px] font-mono" spellcheck="false" />
+              <button type="button" id="send-tokens-btn" class="shrink-0 border-2 border-neon-yellow text-neon-yellow px-3 py-2 rounded text-[10px] hover:bg-neon-yellow/10 disabled:opacity-50">SEND</button>
+            </div>
           </div>
           <p id="send-feedback" class="text-[10px] mt-2 hidden"></p>
         </div>
@@ -1587,9 +1584,11 @@
       var supabase = window.supabaseClient;
       if (!supabase) { if (cb) cb(null); return; }
       var isGuest = me.indexOf('guest_') === 0;
-      var q = isGuest ? supabase.from('leaderboard').select('id, tokens').eq('player_id', me).maybeSingle() : supabase.from('leaderboard').select('id, tokens').eq('wallet_address', me).maybeSingle();
+      var q = isGuest
+        ? supabase.from('leaderboard').select('id, tokens').eq('player_id', me).maybeSingle()
+        : supabase.from('leaderboard').select('id, tokens').ilike('wallet_address', me).limit(1);
       q.then(function(r) {
-        var row = r.data;
+        var row = isGuest ? r.data : (r.data && r.data[0] ? r.data[0] : null);
         if (row) {
           var serverTokens = row.tokens != null ? Number(row.tokens) : 0;
           if (serverTokens > tokens) { tokens = Math.max(0, serverTokens); save(); if (typeof updateUI === 'function') updateUI(); }
@@ -1601,15 +1600,26 @@
           if (cb) cb(row);
           return;
         }
-        var name = (typeof getPlayerName === 'function' ? getPlayerName() : null) || 'Player';
-        var refCode = (localStorage && localStorage.getItem('tokenClicker_refCode')) || null;
-        if (refCode && refCode.trim()) refCode = refCode.trim().toUpperCase();
-        var payload = { name: name.slice(0, 100), tokens: Math.max(0, tokens), updated_at: new Date().toISOString(), ref_code: refCode };
-        if (isGuest) payload.player_id = me;
-        else { payload.wallet_address = me; payload.player_id = me; }
-        supabase.from('leaderboard').insert(payload).then(function(ir) {
-          if (cb) cb(ir.data ? { id: ir.data[0] && ir.data[0].id } : null);
-        });
+        row = null;
+        if (!isGuest) {
+          var byPlayer = supabase.from('leaderboard').select('id, tokens').eq('player_id', me).maybeSingle();
+          byPlayer.then(function(r2) {
+            if (r2.data) { row = r2.data; if (cb) cb(row); return; }
+            doInsert();
+          });
+        } else doInsert();
+        function doInsert() {
+          var name = (typeof getPlayerName === 'function' ? getPlayerName() : null) || 'Player';
+          var refCode = (localStorage && localStorage.getItem('tokenClicker_refCode')) || null;
+          if (refCode && refCode.trim()) refCode = refCode.trim().toUpperCase();
+          var payload = { name: name.slice(0, 100), tokens: Math.max(0, tokens), updated_at: new Date().toISOString(), ref_code: refCode };
+          if (isGuest) payload.player_id = me;
+          else { payload.wallet_address = me; payload.player_id = me; }
+          supabase.from('leaderboard').insert(payload).then(function(ir) {
+            if (ir.error) { if (cb) cb(null); return; }
+            if (cb) cb(ir.data && ir.data[0] ? { id: ir.data[0].id, tokens: ir.data[0].tokens != null ? ir.data[0].tokens : 0 } : null);
+          });
+        }
       });
     }
     function save() {
@@ -2577,8 +2587,6 @@
         if (!code) { code = 'REF' + Math.random().toString(36).slice(2, 8).toUpperCase(); try { localStorage.setItem('tokenClicker_refCode', code); } catch (e) {} }
         var codeEl = document.getElementById('send-my-wallet-code');
         if (codeEl) codeEl.textContent = code || '—';
-        var codeUnderEl = document.getElementById('send-my-wallet-code-under');
-        if (codeUnderEl) codeUnderEl.textContent = code || '—';
         if (typeof loadSendPlayersList === 'function') loadSendPlayersList();
         var qrContainer = document.getElementById('send-qrcode-container');
         if (qrContainer && code) {
@@ -3380,16 +3388,36 @@
         sendFeedback.classList.remove('hidden');
         sendFeedback.classList.remove('text-neon-green', 'text-neon-pink');
         try {
+          if (typeof ensureLeaderboardRow === 'function') {
+            await new Promise(function(resolve) { ensureLeaderboardRow(resolve); });
+          }
           var isGuest = me.indexOf('guest_') === 0;
-          var fromRow = isGuest
-            ? await supabase.from('leaderboard').select('id, tokens').eq('player_id', me).maybeSingle()
-            : await supabase.from('leaderboard').select('id, tokens').eq('wallet_address', me).maybeSingle();
-          if (fromRow.error || !fromRow.data) { sendFeedback.textContent = 'Your internal wallet not found. Open Wallet tab once and try again.'; sendFeedback.classList.add('text-neon-pink'); sendTokensBtn.disabled = false; return; }
+          function fetchFromRow() {
+            return isGuest
+              ? supabase.from('leaderboard').select('id, tokens').eq('player_id', me).maybeSingle()
+              : supabase.from('leaderboard').select('id, tokens').ilike('wallet_address', me).limit(1);
+          }
+          var fromResult = await fetchFromRow();
+          var fromRow = isGuest ? fromResult : { data: fromResult.data && fromResult.data[0] ? fromResult.data[0] : null, error: fromResult.error };
+          if (!fromRow.data && !isGuest) {
+            var byPlayer = await supabase.from('leaderboard').select('id, tokens').eq('player_id', me).maybeSingle();
+            if (byPlayer.data) fromRow = byPlayer;
+          }
+          if (!fromRow.data) {
+            await new Promise(function(r) { setTimeout(r, 450); });
+            fromResult = await fetchFromRow();
+            fromRow = isGuest ? fromResult : { data: fromResult.data && fromResult.data[0] ? fromResult.data[0] : null, error: fromResult.error };
+            if (!fromRow.data && !isGuest) {
+              byPlayer = await supabase.from('leaderboard').select('id, tokens').eq('player_id', me).maybeSingle();
+              if (byPlayer.data) fromRow = byPlayer;
+            }
+          }
+          if (fromRow.error || !fromRow.data) { sendFeedback.textContent = 'Your internal wallet not found. Connect wallet or open Wallet tab, then try again.'; sendFeedback.classList.add('text-neon-pink'); sendTokensBtn.disabled = false; return; }
           var looksLikeRef = /^REF[A-Z0-9]{4,}$/i.test(toInput);
           var toResult = looksLikeRef
-            ? await supabase.from('leaderboard').select('id, tokens, name, ref_code').ilike('ref_code', toInput.trim()).limit(1)
-            : await supabase.from('leaderboard').select('id, tokens').eq('wallet_address', toInput).maybeSingle();
-          var toRow = looksLikeRef ? { data: toResult.data && toResult.data[0] ? toResult.data[0] : null, error: toResult.error } : toResult;
+            ? await supabase.from('leaderboard').select('id, tokens, name, ref_code').ilike('ref_code', toInput.trim().toUpperCase()).limit(1)
+            : await supabase.from('leaderboard').select('id, tokens').ilike('wallet_address', toInput.trim()).limit(1);
+          var toRow = { data: toResult.data && toResult.data[0] ? toResult.data[0] : null, error: toResult.error };
           if (toRow.error || !toRow.data || !toRow.data.id) { sendFeedback.textContent = 'Recipient not found. They need to open the game and have a leaderboard row.'; sendFeedback.classList.add('text-neon-pink'); sendTokensBtn.disabled = false; return; }
           var toCurrent = (toRow.data.tokens != null) ? Number(toRow.data.tokens) : 0;
           tokens -= amount;
@@ -5378,6 +5406,7 @@
       if (pageId === 'wallet') {
         if (typeof updateProfileDisplayName === 'function') updateProfileDisplayName();
         if (typeof fetchTonPrice === 'function') fetchTonPrice();
+        if (typeof ensureLeaderboardRow === 'function') ensureLeaderboardRow();
         var sendTo = getSendToFromHash();
         if (sendTo && typeof showWalletTab === 'function') {
           showWalletTab('send');
