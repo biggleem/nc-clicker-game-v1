@@ -1046,10 +1046,10 @@
         <div class="bg-pixel-panel border-2 border-gray-700 p-4 rounded mb-4">
           <div class="grid grid-cols-2 gap-4 text-center">
             <div>
-              <div class="text-gray-500 text-[10px]">IN-GAME</div>
+              <div class="text-gray-500 text-[10px]">IN-GAME WALLET</div>
               <div id="wallet-balance" class="text-xl neon-text-cyan">0</div>
               <div class="text-gray-500 text-[9px]">tokens</div>
-              <div class="text-gray-600 text-[8px] mt-0.5">Use for Boosts & PVP</div>
+              <div class="text-gray-600 text-[8px] mt-0.5">Earn by tapping & bounties. Use for Boosts & PVP.</div>
             </div>
             <div>
               <div class="text-gray-500 text-[10px]">$CARD (on-chain)</div>
@@ -2554,8 +2554,10 @@
     document.getElementById('home-customize-buffs-btn') && document.getElementById('home-customize-buffs-btn').addEventListener('click', openCustomizeBuffsModal);
     document.getElementById('customize-buffs-modal-close') && document.getElementById('customize-buffs-modal-close').addEventListener('click', closeCustomizeBuffsModal);
     document.getElementById('customize-buffs-modal') && document.getElementById('customize-buffs-modal').addEventListener('click', function(e) { if (e.target && e.target.id === 'customize-buffs-modal') closeCustomizeBuffsModal(); });
-    // Room settings modal (room name + copy link)
+    // Room settings modal (room name + copy link). LocalStorage fallback when DB column missing.
     var roomSettingsModalRoomId = null;
+    function getLocalRoomName(roomId) { try { var v = localStorage.getItem('pvp_room_name_' + roomId); return (v && v.trim()) ? v.trim() : ''; } catch (e) { return ''; } }
+    function setLocalRoomName(roomId, name) { try { if (roomId && name) localStorage.setItem('pvp_room_name_' + roomId, name); else if (roomId) localStorage.removeItem('pvp_room_name_' + roomId); } catch (e) {} }
     function openRoomSettingsModal(roomId) {
       if (!roomId) return;
       roomSettingsModalRoomId = roomId;
@@ -2566,11 +2568,12 @@
       var base = (typeof getShareBaseUrl === 'function' ? getShareBaseUrl() : (window.location.origin + window.location.pathname)).replace(/\/?$/, '');
       var shareUrl = base + '/?room=' + roomId;
       if (linkInput) linkInput.value = shareUrl;
-      if (nameInput) nameInput.value = '';
       var supabase = window.supabaseClient;
+      if (nameInput) nameInput.value = getLocalRoomName(roomId);
       if (supabase) {
         supabase.from('rooms').select('room_name').eq('id', roomId).single().then(function(r) {
-          if (!r.error && r.data && r.data.room_name) { if (nameInput) nameInput.value = r.data.room_name; }
+          if (nameInput && !r.error && r.data && r.data.room_name && (r.data.room_name || '').trim()) nameInput.value = (r.data.room_name || '').trim();
+          else if (nameInput && !getLocalRoomName(roomId)) nameInput.value = '';
         }).catch(function() {});
       }
       document.getElementById('room-settings-modal').classList.remove('hidden');
@@ -2584,13 +2587,20 @@
     document.getElementById('room-settings-modal-close') && document.getElementById('room-settings-modal-close').addEventListener('click', closeRoomSettingsModal);
     document.getElementById('room-settings-modal') && document.getElementById('room-settings-modal').addEventListener('click', function(e) { if (e.target && e.target.id === 'room-settings-modal') closeRoomSettingsModal(); });
     document.getElementById('room-settings-save-btn') && document.getElementById('room-settings-save-btn').addEventListener('click', function() {
-      if (!roomSettingsModalRoomId || !window.supabaseClient) return;
+      if (!roomSettingsModalRoomId) return;
       var nameInput = document.getElementById('room-settings-name');
       var saveStatus = document.getElementById('room-settings-save-status');
       var name = nameInput ? (nameInput.value || '').trim() : '';
+      setLocalRoomName(roomSettingsModalRoomId, name);
+      if (!window.supabaseClient) {
+        if (saveStatus) saveStatus.textContent = 'Saved (this device)';
+        if (typeof loadPvpRooms === 'function') loadPvpRooms();
+        if (saveStatus) setTimeout(function() { saveStatus.textContent = ''; }, 2000);
+        return;
+      }
       window.supabaseClient.from('rooms').update({ room_name: name || null, updated_at: new Date().toISOString() }).eq('id', roomSettingsModalRoomId).then(function(r) {
-        if (saveStatus) saveStatus.textContent = r.error ? 'Failed' : 'Saved';
-        if (!r.error && typeof loadPvpRooms === 'function') loadPvpRooms();
+        if (saveStatus) saveStatus.textContent = r.error ? 'Saved (this device)' : 'Saved';
+        if (typeof loadPvpRooms === 'function') loadPvpRooms();
         if (saveStatus) setTimeout(function() { saveStatus.textContent = ''; }, 2000);
       });
     });
@@ -4206,7 +4216,7 @@
             var statusText = isWagerPending ? (myAgreed ? 'Waiting for other player…' : 'Agree to start') : (room.status === 'in_progress' ? 'Race in progress — tap ENTER DUEL' : count + '/2 · ' + room.status);
             return '<div class="pvp-room-card bg-pixel-panel border-2 border-gray-700 p-3 rounded text-left cursor-pointer hover:border-gray-500 relative" data-room-id="' + room.id + '" data-room-action="' + cardAction + '" data-room-stake="' + stake + '">' +
               '<div class="flex justify-between items-center gap-2">' +
-              '<span class="text-[10px] text-neon-pink truncate">Room ' + (room.room_name && room.room_name.trim() ? room.room_name.trim() : shortId) + (isMine ? ' (you)' : '') + ' · ' + stake + ' tokens</span>' + closeXBtn +
+              '<span class="text-[10px] text-neon-pink truncate">Room ' + (room.room_name && room.room_name.trim() ? room.room_name.trim() : (typeof getLocalRoomName === 'function' ? getLocalRoomName(room.id) : '') || shortId) + (isMine ? ' (you)' : '') + ' · ' + stake + ' tokens</span>' + closeXBtn +
               '</div>' +
               '<div class="text-gray-500 text-[9px] mt-1">' + count + '/2 · ' + statusText + '</div>' +
               '<div class="mt-2 flex flex-wrap gap-2 items-center justify-between">' +
