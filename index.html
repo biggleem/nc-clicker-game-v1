@@ -1249,9 +1249,21 @@
       <div class="bg-pixel-panel border-2 border-neon-pink/30 p-3 rounded mb-4">
         <div class="text-[10px] text-gray-500 mb-1">PVP DUEL WINS (TOP 5)</div>
         <p class="text-[9px] text-gray-500 mb-2">Wins and total tokens won from wagers.</p>
-        <ol id="leaderboard-pvp-list" class="space-y-1 text-[10px] list-decimal list-inside text-gray-300 min-h-[24px]">
-          <li class="text-gray-500">Loading…</li>
-        </ol>
+        <div id="leaderboard-pvp-list-wrapper" class="min-h-[24px] overflow-x-auto">
+          <table id="leaderboard-pvp-list" class="w-full text-[10px] text-gray-300 border-collapse" aria-label="PVP duel wins top 5">
+            <thead>
+              <tr class="text-left border-b border-gray-600">
+                <th class="py-1.5 px-2 text-gray-500 font-medium">Rank</th>
+                <th class="py-1.5 px-2 text-gray-500 font-medium">Username</th>
+                <th class="py-1.5 px-2 text-gray-500 font-medium">Wins</th>
+                <th class="py-1.5 px-2 text-gray-500 font-medium">Tokens won</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-pvp-tbody">
+              <tr><td colspan="4" class="py-2 px-2 text-gray-500">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
         <button type="button" id="pvp-full-list-btn" class="mt-2 py-1.5 px-3 border-2 border-neon-pink text-neon-pink rounded text-[9px] hover:bg-neon-pink/10">VIEW FULL LIST</button>
       </div>
       <!-- Create room (primary action) -->
@@ -1313,6 +1325,10 @@
             <button type="button" id="pvp-duel-copy-link-btn" class="py-1 px-2 border-2 border-neon-cyan text-neon-cyan rounded text-[8px] hover:bg-neon-cyan/10 shrink-0">COPY</button>
             <button type="button" id="pvp-duel-customize-boosts-btn" class="py-1 px-2 border-2 border-neon-cyan text-neon-cyan rounded text-[8px] hover:bg-neon-cyan/10 shrink-0">CUSTOMIZE BOOSTS</button>
           </div>
+        </div>
+        <div id="pvp-duel-ready-wrap" class="text-center mt-3 hidden">
+          <p id="pvp-duel-ready-status" class="text-[9px] text-gray-400 mb-2">Both players must click READY. Then 5… 4… 3… 2… 1… GO!</p>
+          <button type="button" id="pvp-duel-ready-btn" class="py-2 px-4 border-2 border-neon-green text-neon-green rounded text-[10px] font-bold hover:bg-neon-green/10">READY</button>
         </div>
         <div class="mt-3 text-center">
           <button type="button" id="pvp-duel-end-game-btn" class="py-2 px-4 border-2 border-neon-pink text-neon-pink rounded text-[9px] hover:bg-neon-pink/10">END GAME</button>
@@ -2355,28 +2371,34 @@
     }
     function loadLeaderboardPvp() {
       var supabase = window.supabaseClient;
-      var list = document.getElementById('leaderboard-pvp-list');
-      var targets = list ? [list] : [];
-      if (targets.length === 0) return;
-      function setAll(html) { targets.forEach(function(t) { t.innerHTML = html; }); }
+      var tbody = document.getElementById('leaderboard-pvp-tbody');
+      if (!tbody) return;
+      function setAll(html) { tbody.innerHTML = html; }
       if (!supabase) {
-        setAll('<li class="text-gray-500">Leaderboard unavailable.</li>');
+        setAll('<tr><td colspan="4" class="py-2 px-2 text-gray-500">Leaderboard unavailable.</td></tr>');
         return;
       }
-      var hadContent = targets.some(function(t) { return t.innerHTML && t.innerHTML.indexOf('Loading') < 0 && t.innerHTML.indexOf('No duel wins') < 0 && t.innerHTML.indexOf('unavailable') < 0; });
-      if (!hadContent) setAll('<li class="text-gray-500">Loading…</li>');
+      var hadContent = tbody.innerHTML && tbody.innerHTML.indexOf('Loading') < 0 && tbody.innerHTML.indexOf('No duel wins') < 0 && tbody.innerHTML.indexOf('unavailable') < 0;
+      if (!hadContent) setAll('<tr><td colspan="4" class="py-2 px-2 text-gray-500">Loading…</td></tr>');
       supabase.from('leaderboard').select('name, pvp_wins, pvp_tokens_won').not('pvp_wins', 'is', null).then(function(r) {
         if (r.error) {
-          supabase.from('leaderboard').select('name, pvp_wins').not('pvp_wins', 'is', null).then(function(r2) {
-            if (r2.error || !r2.data || r2.data.length === 0) { setAll('<li class="text-gray-500">No duel wins yet.</li>'); return; }
+          supabase.from('leaderboard').select('name, pvp_wins, pvp_tokens_won').not('pvp_wins', 'is', null).then(function(r2) {
+            if (r2.error || !r2.data || r2.data.length === 0) { setAll('<tr><td colspan="4" class="py-2 px-2 text-gray-500">No duel wins yet.</td></tr>'); return; }
             var byName = {};
-            r2.data.forEach(function(e) { var name = (e.name || 'Player').trim() || 'Player'; var w = e.pvp_wins != null ? Number(e.pvp_wins) : 0; if (!byName[name]) byName[name] = 0; byName[name] += w; });
-            var sorted = Object.keys(byName).map(function(name) { return { name: name, wins: byName[name], tokensWon: 0 }; }).sort(function(a, b) { return b.wins - a.wins; }).slice(0, 5);
-            setAll(sorted.map(function(e) { return '<li>' + e.name + ' — ' + e.wins + ' win' + (e.wins !== 1 ? 's' : '') + ', 0 tokens won</li>'; }).join(''));
+            r2.data.forEach(function(e) {
+              var name = (e.name || 'Player').trim() || 'Player';
+              var w = e.pvp_wins != null ? Number(e.pvp_wins) : 0;
+              var tok = (e.pvp_tokens_won != null ? Number(e.pvp_tokens_won) : 0);
+              if (!byName[name]) byName[name] = { wins: 0, tokensWon: 0 };
+              byName[name].wins += w;
+              byName[name].tokensWon += tok;
+            });
+            var sorted = Object.keys(byName).map(function(name) { return { name: name, wins: byName[name].wins, tokensWon: byName[name].tokensWon }; }).sort(function(a, b) { return b.wins - a.wins; }).slice(0, 5);
+            setAll(sorted.map(function(e, i) { return '<tr class="border-b border-gray-700/50"><td class="py-1.5 px-2">' + (i + 1) + '</td><td class="py-1.5 px-2">' + (e.name || '').replace(/</g, '&lt;') + '</td><td class="py-1.5 px-2">' + e.wins + '</td><td class="py-1.5 px-2">' + e.tokensWon + '</td></tr>'; }).join(''));
           });
           return;
         }
-        if (!r.data || r.data.length === 0) { setAll('<li class="text-gray-500">No duel wins yet.</li>'); return; }
+        if (!r.data || r.data.length === 0) { setAll('<tr><td colspan="4" class="py-2 px-2 text-gray-500">No duel wins yet.</td></tr>'); return; }
         var byName = {};
         r.data.forEach(function(e) {
           var name = (e.name || 'Player').trim() || 'Player';
@@ -2387,10 +2409,9 @@
           byName[name].tokensWon += tok;
         });
         var sorted = Object.keys(byName).map(function(name) { return { name: name, wins: byName[name].wins, tokensWon: byName[name].tokensWon }; }).sort(function(a, b) { return b.wins - a.wins; }).slice(0, 5);
-        var html = sorted.map(function(e) {
-          var wins = e.wins;
-          var tok = e.tokensWon;
-          return '<li>' + e.name + ' — ' + wins + ' win' + (wins !== 1 ? 's' : '') + ', ' + tok + ' token' + (tok !== 1 ? 's' : '') + ' won</li>';
+        var html = sorted.map(function(e, i) {
+          var name = (e.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          return '<tr class="border-b border-gray-700/50"><td class="py-1.5 px-2">' + (i + 1) + '</td><td class="py-1.5 px-2">' + name + '</td><td class="py-1.5 px-2">' + e.wins + '</td><td class="py-1.5 px-2">' + e.tokensWon + '</td></tr>';
         }).join('');
         setAll(html);
       });
@@ -2403,12 +2424,19 @@
       list.innerHTML = '<li class="text-gray-500">Loading…</li>';
       supabase.from('leaderboard').select('name, pvp_wins, pvp_tokens_won').not('pvp_wins', 'is', null).then(function(r) {
         if (r.error) {
-          supabase.from('leaderboard').select('name, pvp_wins').not('pvp_wins', 'is', null).then(function(r2) {
+          supabase.from('leaderboard').select('name, pvp_wins, pvp_tokens_won').not('pvp_wins', 'is', null).then(function(r2) {
             if (r2.error || !r2.data || r2.data.length === 0) { list.innerHTML = '<li class="text-gray-500">No duel wins yet.</li>'; return; }
             var byName = {};
-            r2.data.forEach(function(e) { var name = (e.name || 'Player').trim() || 'Player'; var w = e.pvp_wins != null ? Number(e.pvp_wins) : 0; if (!byName[name]) byName[name] = 0; byName[name] += w; });
-            var sorted = Object.keys(byName).map(function(name) { return { name: name, wins: byName[name], tokensWon: 0 }; }).sort(function(a, b) { return b.wins - a.wins; }).slice(0, 100);
-            list.innerHTML = sorted.map(function(e) { return '<li>' + e.name + ' — ' + e.wins + ' win' + (e.wins !== 1 ? 's' : '') + ', 0 tokens won</li>'; }).join('');
+            r2.data.forEach(function(e) {
+              var name = (e.name || 'Player').trim() || 'Player';
+              var w = e.pvp_wins != null ? Number(e.pvp_wins) : 0;
+              var tok = e.pvp_tokens_won != null ? Number(e.pvp_tokens_won) : 0;
+              if (!byName[name]) byName[name] = { wins: 0, tokensWon: 0 };
+              byName[name].wins += w;
+              byName[name].tokensWon += tok;
+            });
+            var sorted = Object.keys(byName).map(function(name) { return { name: name, wins: byName[name].wins, tokensWon: byName[name].tokensWon }; }).sort(function(a, b) { return b.wins - a.wins; }).slice(0, 100);
+            list.innerHTML = sorted.map(function(e) { var tok = e.tokensWon; return '<li>' + e.name + ' — ' + e.wins + ' win' + (e.wins !== 1 ? 's' : '') + ', ' + tok + ' token' + (tok !== 1 ? 's' : '') + ' won</li>'; }).join('');
           });
           return;
         }
@@ -3797,7 +3825,7 @@
     // --- PVP: token stakes, countdown ---
     var PVP_DEFAULT_STAKE = 5;
     var PVP_GAME_DURATION_SEC = 30;
-    var PVP_COUNTDOWN_SEC = 4;
+    var PVP_COUNTDOWN_SEC = 5;
     var PVP_CLICK_COOLDOWN_MS = 200;
     var PVP_PRESET_STAKES = [2, 5, 7, 10];
 
@@ -4619,12 +4647,12 @@
       function loadRoomsWithCols(cols) {
         return supabase.from('rooms').select(cols).order('created_at', { ascending: false }).limit(50);
       }
-      loadRoomsWithCols('id, status, player1_wallet, player2_wallet, player1_name, player2_name, player1_wager_agreed, player2_wager_agreed, player1_clicks, player2_clicks, game_started_at, game_ends_at, winner_wallet, stake_amount, rematch_until, room_name, created_at')
+      loadRoomsWithCols('id, status, player1_wallet, player2_wallet, player1_name, player2_name, player1_wager_agreed, player2_wager_agreed, player1_ready, player2_ready, player1_clicks, player2_clicks, game_started_at, game_ends_at, winner_wallet, stake_amount, rematch_until, room_name, created_at')
         .then(function(r) {
           var msg = r.error && r.error.message ? r.error.message : '';
-          if (r.error && (msg.indexOf('rematch') >= 0 || msg.indexOf('does not exist') >= 0 || msg.indexOf('schema cache') >= 0 || msg.indexOf('player1_wager_agreed') >= 0 || msg.indexOf('player2_wager_agreed') >= 0 || msg.indexOf('room_name') >= 0)) {
+          if (r.error && (msg.indexOf('rematch') >= 0 || msg.indexOf('does not exist') >= 0 || msg.indexOf('schema cache') >= 0 || msg.indexOf('player1_wager_agreed') >= 0 || msg.indexOf('player2_wager_agreed') >= 0 || msg.indexOf('room_name') >= 0 || msg.indexOf('player1_ready') >= 0 || msg.indexOf('player2_ready') >= 0)) {
             return loadRoomsWithCols('id, status, player1_wallet, player2_wallet, player1_name, player2_name, player1_clicks, player2_clicks, game_started_at, game_ends_at, winner_wallet, stake_amount, created_at').then(function(r2) {
-              if (r2.data) r2.data.forEach(function(room) { room.rematch_until = null; room.player1_wager_agreed = true; room.player2_wager_agreed = room.player2_wallet ? true : false; room.room_name = room.room_name || null; });
+              if (r2.data) r2.data.forEach(function(room) { room.rematch_until = null; room.player1_wager_agreed = true; room.player2_wager_agreed = room.player2_wallet ? true : false; room.room_name = room.room_name || null; room.player1_ready = false; room.player2_ready = false; });
               return r2;
             });
           }
@@ -4884,13 +4912,12 @@
     function doJoinPvpRoom(roomId, me, name, errEl) {
       var supabase = window.supabaseClient;
       var now = new Date();
-      var gameEndsAt = new Date(now.getTime() + 90 * 1000);
       supabase.from('rooms').update({
         player2_wallet: me,
         player2_name: name,
         status: 'in_progress',
-        game_started_at: now.toISOString(),
-        game_ends_at: gameEndsAt.toISOString(),
+        player1_ready: false,
+        player2_ready: false,
         updated_at: now.toISOString()
       }).eq('id', roomId).eq('status', 'open')
         .then(function(r) {
@@ -4926,12 +4953,10 @@
             if (r2.error || !r2.data) return;
             var row = r2.data;
             if (row.player1_wager_agreed !== true || row.player2_wager_agreed !== true) return;
-            var totalSec = PVP_COUNTDOWN_SEC + PVP_GAME_DURATION_SEC;
-            var endsAt = new Date(Date.now() + totalSec * 1000);
             supabase.from('rooms').update({
               status: 'in_progress',
-              game_started_at: new Date().toISOString(),
-              game_ends_at: endsAt.toISOString(),
+              player1_ready: false,
+              player2_ready: false,
               updated_at: new Date().toISOString()
             }).eq('id', roomId).then(function() {
               if (typeof enterDuel === 'function') enterDuel(roomId);
@@ -5035,6 +5060,8 @@
       document.getElementById('pvp-duel-view').classList.remove('hidden');
       document.getElementById('pvp-duel-result').classList.add('hidden');
       document.getElementById('pvp-duel-waiting').classList.add('hidden');
+      var readyWrap = document.getElementById('pvp-duel-ready-wrap');
+      if (readyWrap) readyWrap.classList.add('hidden');
       var me = getPvpPlayerId();
       var supabase = window.supabaseClient;
       supabase.from('rooms').select('*').eq('id', roomId).single().then(function(r) {
@@ -5049,25 +5076,61 @@
         document.getElementById('pvp-duel-you-clicks').textContent = String(pvpDuelMyRole === 1 ? room.player1_clicks : room.player2_clicks);
         document.getElementById('pvp-duel-opp-clicks').textContent = String(pvpDuelMyRole === 1 ? room.player2_clicks : room.player1_clicks);
         var endsAt = room.game_ends_at ? new Date(room.game_ends_at).getTime() : 0;
-        if (room.status === 'open' || (!endsAt && room.status === 'in_progress')) {
+        var needReady = room.status === 'in_progress' && !endsAt && room.player2_wallet && (typeof room.player1_ready === 'boolean' || typeof room.player2_ready === 'boolean');
+        if (needReady) {
+          if (document.getElementById('pvp-duel-waiting')) document.getElementById('pvp-duel-waiting').classList.add('hidden');
+          if (readyWrap) readyWrap.classList.remove('hidden');
+          updatePvpReadyUI(room);
+        } else if (room.status === 'open' || (!endsAt && room.status === 'in_progress')) {
           var waitEl = document.getElementById('pvp-duel-waiting');
           if (waitEl) waitEl.classList.remove('hidden');
+          if (readyWrap) readyWrap.classList.add('hidden');
           var linkEl = document.getElementById('pvp-duel-room-link');
           if (linkEl) linkEl.textContent = (getShareBaseUrl ? getShareBaseUrl() : window.location.href.split('?')[0]) + '?room=' + roomId;
-        }
+        } else if (readyWrap) readyWrap.classList.add('hidden');
         startDuelTimer(endsAt);
         subscribeDuelRoom(roomId);
         if (pvpDuelPollId) clearInterval(pvpDuelPollId);
         pvpDuelPollId = setInterval(function() {
           if (!pvpDuelRoomId) { if (pvpDuelPollId) clearInterval(pvpDuelPollId); pvpDuelPollId = null; return; }
-          supabase.from('rooms').select('player1_clicks, player2_clicks, status, game_ends_at').eq('id', roomId).single().then(function(r) {
+          supabase.from('rooms').select('player1_clicks, player2_clicks, status, game_ends_at, player1_ready, player2_ready').eq('id', roomId).single().then(function(r) {
             if (r.error || !r.data) return;
             var room = r.data;
             document.getElementById('pvp-duel-you-clicks').textContent = String(pvpDuelMyRole === 1 ? room.player1_clicks : room.player2_clicks);
             document.getElementById('pvp-duel-opp-clicks').textContent = String(pvpDuelMyRole === 1 ? room.player2_clicks : room.player1_clicks);
-            if (room.status === 'finished') { if (pvpDuelPollId) clearInterval(pvpDuelPollId); pvpDuelPollId = null; if (pvpDuelTimerId) clearInterval(pvpDuelTimerId); pvpDuelTimerId = null; endDuelGame(); }
+            if (room.status === 'finished') { if (pvpDuelPollId) clearInterval(pvpDuelPollId); pvpDuelPollId = null; if (pvpDuelTimerId) clearInterval(pvpDuelTimerId); pvpDuelTimerId = null; endDuelGame(); return; }
+            var endsAt2 = room.game_ends_at ? new Date(room.game_ends_at).getTime() : 0;
+            if (room.player1_ready && room.player2_ready && !endsAt2 && typeof startDuelWhenBothReady === 'function') startDuelWhenBothReady(roomId);
+            else if (typeof updatePvpReadyUI === 'function') updatePvpReadyUI(room);
           });
         }, 250);
+      });
+    }
+    function updatePvpReadyUI(room) {
+      var readyWrap = document.getElementById('pvp-duel-ready-wrap');
+      if (!readyWrap || !room) return;
+      if (room.game_ends_at) { readyWrap.classList.add('hidden'); return; }
+      var myReady = (pvpDuelMyRole === 1 && room.player1_ready) || (pvpDuelMyRole === 2 && room.player2_ready);
+      var otherReady = (pvpDuelMyRole === 1 && room.player2_ready) || (pvpDuelMyRole === 2 && room.player1_ready);
+      var btn = document.getElementById('pvp-duel-ready-btn');
+      var statusEl = document.getElementById('pvp-duel-ready-status');
+      if (btn) { btn.textContent = myReady ? 'Ready!' : 'READY'; btn.disabled = myReady; }
+      if (statusEl) statusEl.textContent = myReady ? (otherReady ? 'Both ready! Starting in 5…' : 'Waiting for opponent to be ready…') : 'Click READY. Then 5… 4… 3… 2… 1… GO!';
+    }
+    function startDuelWhenBothReady(roomId) {
+      var supabase = window.supabaseClient;
+      if (!supabase) return;
+      var now = new Date();
+      var totalSec = PVP_COUNTDOWN_SEC + PVP_GAME_DURATION_SEC;
+      var endsAt = new Date(now.getTime() + totalSec * 1000);
+      supabase.from('rooms').update({
+        game_started_at: now.toISOString(),
+        game_ends_at: endsAt.toISOString(),
+        player1_ready: false,
+        player2_ready: false,
+        updated_at: now.toISOString()
+      }).eq('id', roomId).is('game_ends_at', null).then(function() {
+        startDuelTimer(endsAt.getTime());
       });
     }
     function startDuelTimer(endsAtMs) {
@@ -5082,10 +5145,12 @@
           var countdownLeft = Math.ceil((countdownEndMs - now) / 1000);
           var el = document.getElementById('pvp-duel-timer');
           if (el) {
-            if (countdownLeft >= 4) { el.textContent = '3'; el.classList.remove('pvp-go-glow'); }
-            else if (countdownLeft === 3) { el.textContent = '2'; el.classList.remove('pvp-go-glow'); }
-            else if (countdownLeft === 2) { el.textContent = '1'; el.classList.remove('pvp-go-glow'); }
-            else if (countdownLeft === 1) { el.textContent = 'GO!'; el.classList.add('pvp-go-glow'); }
+            if (countdownLeft >= 5) { el.textContent = '5'; el.classList.remove('pvp-go-glow'); }
+            else if (countdownLeft === 4) { el.textContent = '4'; el.classList.remove('pvp-go-glow'); }
+            else if (countdownLeft === 3) { el.textContent = '3'; el.classList.remove('pvp-go-glow'); }
+            else if (countdownLeft === 2) { el.textContent = '2'; el.classList.remove('pvp-go-glow'); }
+            else if (countdownLeft === 1) { el.textContent = '1'; el.classList.remove('pvp-go-glow'); }
+            else if (countdownLeft === 0) { el.textContent = 'GO!'; el.classList.add('pvp-go-glow'); }
             else { el.textContent = 'GO!'; el.classList.add('pvp-go-glow'); }
           }
           return;
@@ -5114,7 +5179,9 @@
         document.getElementById('pvp-duel-you-clicks').textContent = String(pvpDuelMyRole === 1 ? room.player1_clicks : room.player2_clicks);
         document.getElementById('pvp-duel-opp-clicks').textContent = String(pvpDuelMyRole === 1 ? room.player2_clicks : room.player1_clicks);
         var endsAt = room.game_ends_at ? new Date(room.game_ends_at).getTime() : 0;
+        if (room.player1_ready && room.player2_ready && !endsAt && typeof startDuelWhenBothReady === 'function') startDuelWhenBothReady(roomId);
         if (endsAt && !pvpDuelTimerId) startDuelTimer(endsAt);
+        if (typeof updatePvpReadyUI === 'function') updatePvpReadyUI(room);
         if (room.status === 'finished') {
           if (pvpDuelTimerId) { clearInterval(pvpDuelTimerId); pvpDuelTimerId = null; }
           showDuelResult(room);
@@ -5219,6 +5286,7 @@
       } else {
         rematchCountEl.classList.add('hidden');
       }
+      if (typeof loadLeaderboardPvp === 'function') loadLeaderboardPvp();
     }
     function upsertLeaderboardWin(wallet, name, tokensWon) {
       var supabase = window.supabaseClient;
@@ -5283,6 +5351,18 @@
       if (!supabase) return;
       supabase.rpc('increment_pvp_clicks', { room_id: pvpDuelRoomId, player_num: pvpDuelMyRole }).then(function(r) {
         if (r.data && r.data.clicks != null) document.getElementById('pvp-duel-you-clicks').textContent = String(r.data.clicks);
+      });
+    });
+    document.getElementById('pvp-duel-ready-btn') && document.getElementById('pvp-duel-ready-btn').addEventListener('click', function() {
+      if (pvpVsBotMode || !pvpDuelRoomId || !pvpDuelMyRole) return;
+      var supabase = window.supabaseClient;
+      if (!supabase) return;
+      var col = pvpDuelMyRole === 1 ? 'player1_ready' : 'player2_ready';
+      supabase.from('rooms').update({ [col]: true, updated_at: new Date().toISOString() }).eq('id', pvpDuelRoomId).then(function() {
+        if (typeof updatePvpReadyUI === 'function') {
+          var r = { player1_ready: pvpDuelMyRole === 1, player2_ready: pvpDuelMyRole === 2 };
+          updatePvpReadyUI(r);
+        }
       });
     });
     document.getElementById('pvp-duel-end-game-btn') && document.getElementById('pvp-duel-end-game-btn').addEventListener('click', function() {
