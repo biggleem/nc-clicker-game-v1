@@ -7,6 +7,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
+  <!-- Bump this on every deploy so devices get updates (script below reloads if server version is newer) -->
+  <meta name="app-version" content="2">
   <!-- Fix GitHub Pages: base URL so scripts/assets load from repo root (e.g. /nc-clicker-game-v1/) -->
   <script>
     (function(){
@@ -265,6 +267,23 @@
   </style>
 </head>
 <body class="bg-dark text-white font-pixel text-xs md:text-sm antialiased" style="background:#0a0a0a; color:#fff; margin:0; min-height:100vh;">
+  <!-- Check for app update: fetch live index (no cache); if server version &gt; this page, reload to get update -->
+  <script>
+    (function(){
+      if (location.protocol === 'file:' || !document.querySelector) return;
+      if ('serviceWorker' in navigator) { navigator.serviceWorker.getRegistrations().then(function(regs){ regs.forEach(function(r){ r.unregister(); }); }); }
+      var meta = document.querySelector('meta[name="app-version"]');
+      var myVer = meta ? meta.getAttribute('content') : '';
+      if (!myVer) return;
+      var path = location.pathname.replace(/\/?$/, '') || '/';
+      var url = (path === '/' ? '/' : path + (path.indexOf('.html') !== -1 ? '' : '/')) + '?t=' + Date.now();
+      fetch(url, { cache: 'no-store', credentials: 'same-origin' }).then(function(r){ return r.text(); }).then(function(html){
+        var m = html.match(/<meta\s+name="app-version"\s+content="([^"]+)"/);
+        var serverVer = m ? m[1] : '';
+        if (serverVer && serverVer !== myVer) { location.reload(true); }
+      }).catch(function(){});
+    })();
+  </script>
   <!-- Rising stars layer (behind app) -->
   <div class="stars-layer" id="stars-layer" aria-hidden="true"></div>
 
@@ -1239,7 +1258,6 @@
       <div class="bg-pixel-panel border-2 border-gray-700 p-4 rounded-lg mb-4">
         <p class="text-[9px] text-gray-500 mb-2">Set a wager and create a room. Share the link — the game starts when your opponent joins.</p>
         <button type="button" id="pvp-open-create-room-btn" class="w-full py-3 px-4 border-2 border-neon-green text-neon-green rounded text-[10px] font-bold hover:bg-neon-green/10 min-h-[48px]">CREATE ROOM</button>
-        <button type="button" id="share-game-native-btn" class="hidden" aria-hidden="true">SHARE (APP)</button>
       </div>
       <!-- Open rooms: tap to join -->
       <div class="mb-4">
@@ -3125,7 +3143,6 @@
 
     // PVP: Share game – copy link that opens on mobile
     const shareGameBtn = document.getElementById('share-game-btn');
-    const shareGameNativeBtn = document.getElementById('share-game-native-btn');
     const shareGameFeedback = document.getElementById('share-game-feedback');
     function fallbackCopy(text, feedbackEl) {
       var ta = document.createElement('textarea');
@@ -3145,16 +3162,6 @@
             if (shareGameFeedback) { shareGameFeedback.classList.remove('hidden'); setTimeout(function() { shareGameFeedback.classList.add('hidden'); }, 4000); }
           }).catch(function() { fallbackCopy(url, shareGameFeedback); if (typeof markSharedGame === 'function') markSharedGame(); });
         } else { fallbackCopy(url, shareGameFeedback); if (typeof markSharedGame === 'function') markSharedGame(); }
-      });
-    }
-    if (shareGameNativeBtn && navigator.share) {
-      shareGameNativeBtn.classList.remove('hidden');
-      shareGameNativeBtn.addEventListener('click', function() {
-        navigator.share({
-          title: '1N Blockchain Token Clicker',
-          text: (typeof getShareText === 'function' ? getShareText() : 'Tap the Cardinal to earn tokens. Play on your phone – PVP with friends!'),
-          url: getGameUrl(),
-        }).then(function() { if (typeof markSharedGame === 'function') markSharedGame(); if (shareGameFeedback) { shareGameFeedback.textContent = 'Shared!'; shareGameFeedback.classList.remove('hidden'); setTimeout(function() { shareGameFeedback.classList.add('hidden'); }, 3000); } }).catch(function() {});
       });
     }
     document.querySelectorAll('.share-bounty-btn').forEach(function(btn) {
