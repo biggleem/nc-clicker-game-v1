@@ -3546,19 +3546,21 @@
           // Use one delegated click on the list so all buttons and card clicks work
           list.onclick = function(ev) {
             var target = ev.target;
+            if (target && target.nodeType !== 1) target = target.parentElement;
+            if (!target) return;
             var roomId = target.getAttribute && target.getAttribute('data-room-id');
             if (!roomId) {
               var card = target.closest && target.closest('.pvp-room-card');
               if (card) {
                 roomId = card.getAttribute('data-room-id');
                 var action = card.getAttribute('data-room-action');
-                if (action === 'join') { ev.preventDefault(); joinPvpRoom(roomId); return; }
-                if (action === 'agree-wager') { ev.preventDefault(); if (typeof agreeWagerPvp === 'function') agreeWagerPvp(roomId); return; }
-                if (action === 'enter-duel') { ev.preventDefault(); enterDuel(roomId); return; }
+                if (action === 'join') { ev.preventDefault(); ev.stopPropagation(); if (typeof joinPvpRoom === 'function') joinPvpRoom(roomId); return; }
+                if (action === 'agree-wager') { ev.preventDefault(); ev.stopPropagation(); if (typeof agreeWagerPvp === 'function') agreeWagerPvp(roomId); return; }
+                if (action === 'enter-duel') { ev.preventDefault(); ev.stopPropagation(); enterDuel(roomId); return; }
               }
               return;
             }
-            if (target.classList && target.classList.contains('pvp-join-btn')) { ev.preventDefault(); joinPvpRoom(roomId); return; }
+            if (target.classList && target.classList.contains('pvp-join-btn')) { ev.preventDefault(); ev.stopPropagation(); if (typeof joinPvpRoom === 'function') joinPvpRoom(roomId); return; }
             if (target.classList && target.classList.contains('pvp-agree-wager-btn')) { ev.preventDefault(); if (typeof agreeWagerPvp === 'function') agreeWagerPvp(roomId); return; }
             if (target.classList && target.classList.contains('pvp-agree-wager-btn')) { ev.preventDefault(); if (typeof agreeWagerPvp === 'function') agreeWagerPvp(roomId); return; }
             if (target.classList && target.classList.contains('pvp-enter-duel-btn')) { ev.preventDefault(); enterDuel(roomId); return; }
@@ -3667,14 +3669,20 @@
       if (btn) btn.disabled = true;
       var me = getPvpPlayerId();
       var createForFriend = window._pvpCreateForFriend || null;
-      supabase.from('rooms').insert({ status: 'open', player1_wallet: me, player1_name: name, stake_amount: stake }).select('id').single()
+      supabase.from('rooms').insert({
+        status: 'open',
+        player1_wallet: me,
+        player1_name: name,
+        stake_amount: stake,
+        player1_wager_agreed: true
+      }).select('id').single()
         .then(function(r) {
           if (btn) btn.disabled = false;
           if (r.error) { if (errEl) { errEl.textContent = r.error.message || 'Failed to create room'; errEl.classList.remove('hidden'); } return; }
           var roomId = r.data.id;
           if (typeof closePvpCreateRoomModal === 'function') closePvpCreateRoomModal();
           var status = document.getElementById('pvp-status');
-          if (status) { status.textContent = 'Room created! Share the link. You will auto-enter when opponent joins.'; status.className = 'text-[9px] text-neon-green mb-2 min-h-[14px]'; setTimeout(function() { status.textContent = ''; status.className = 'text-[9px] text-gray-500 mb-2 min-h-[14px]'; }, 5000); }
+          if (status) { status.textContent = 'Room created! Wager: ' + stake + ' tokens. Share the link — opponent must agree to wager to start.'; status.className = 'text-[9px] text-neon-green mb-2 min-h-[14px]'; setTimeout(function() { status.textContent = ''; status.className = 'text-[9px] text-gray-500 mb-2 min-h-[14px]'; }, 6000); }
           loadPvpRooms();
           if (errEl) errEl.classList.add('hidden');
           if (typeof subscribeCreatorRoomAutoEnter === 'function') subscribeCreatorRoomAutoEnter(roomId);
