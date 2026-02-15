@@ -8,12 +8,14 @@
     "build": "npm run build:wallet",
     "serve": "npx http-server . -p 3001 -c-1",
     "start": "npx http-server . -p 3001 -c-1",
-    "open": "node serve-and-open.cjs"
+    "open": "node serve-and-open.cjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@tonconnect/sdk": "^2.2.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "esbuild": "^0.24.0"
   }
 }
