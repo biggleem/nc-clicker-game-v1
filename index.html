@@ -1231,6 +1231,12 @@
             </div>
           </div>
           <p id="send-feedback" class="text-[10px] mt-2 hidden"></p>
+          <div class="mt-4 pt-3 border-t border-gray-700">
+            <div class="text-[9px] text-gray-500 uppercase tracking-wider mb-2">Recent sends (wallet transactions)</div>
+            <div id="send-transactions-list" class="min-h-[24px] max-h-40 overflow-y-auto p-2 rounded border border-gray-700 bg-black/40 text-[10px] text-gray-400">
+              <span class="text-gray-500">Loading…</span>
+            </div>
+          </div>
         </div>
       </div>
       <!-- Backend / Admin (black square); shown when backendUrl is set -->
@@ -1270,6 +1276,21 @@
           </table>
         </div>
         <button type="button" id="pvp-full-list-btn" class="mt-2 py-1.5 px-3 border-2 border-neon-pink text-neon-pink rounded text-[9px] hover:bg-neon-pink/10">VIEW FULL LIST</button>
+      </div>
+      <!-- Player row above Create room: first friend (favorites first) for quick duel -->
+      <div id="pvp-player-row-above-create" class="bg-pixel-panel border-2 border-gray-700 rounded-lg mb-3 overflow-hidden hidden" data-friend-ref="" data-friend-name="">
+        <div class="flex flex-wrap items-center gap-2 p-3 border-b border-gray-700/50">
+          <span class="flex-1 min-w-0">
+            <span class="text-white text-[10px] font-bold">1.</span>
+            <span id="pvp-player-row-name" class="text-white text-[10px] font-bold ml-1">—</span>
+            <span id="pvp-player-row-tokens" class="block mt-0.5 text-neon-yellow text-[10px] font-bold">0 tokens</span>
+          </span>
+          <span class="flex gap-1 shrink-0 items-center">
+            <button type="button" id="pvp-player-row-favorite-btn" class="pvp-player-row-star py-1 px-1.5 border border-neon-yellow rounded text-[10px] text-gray-500 hover:text-neon-yellow hover:bg-neon-yellow/10" title="Add to favorites" aria-label="Add to favorites">☆</button>
+            <button type="button" id="pvp-player-row-duel-btn" class="py-1 px-2 border border-neon-green text-neon-green rounded text-[9px] hover:bg-neon-green/10">DUEL</button>
+            <button type="button" id="pvp-player-row-remove-btn" class="py-1 px-2 border border-neon-pink text-neon-pink rounded text-[9px] hover:bg-neon-pink/10">REMOVE</button>
+          </span>
+        </div>
       </div>
       <!-- Create room (primary action) -->
       <div class="bg-pixel-panel border-2 border-gray-700 p-4 rounded-lg mb-4">
@@ -2673,6 +2694,7 @@
         var codeEl = document.getElementById('send-my-wallet-code');
         if (codeEl) codeEl.textContent = code || '—';
         if (typeof loadSendPlayersList === 'function') loadSendPlayersList();
+        if (typeof loadSendTransactions === 'function') loadSendTransactions();
         var qrContainer = document.getElementById('send-qrcode-container');
         if (qrContainer && code) {
           qrContainer.innerHTML = '';
@@ -3625,7 +3647,10 @@
           recipientIds.forEach(function(recipientId) {
             if (recipientId) supabase.from('token_received_notifications').insert({ recipient_player_id: recipientId, sender_name: senderName, amount: amount }).then(function() {});
           });
-          var toLabel = looksLikeRef ? (toRow.data.name || toInput) : toInput.slice(0, 8) + '…';
+          var toLabel = looksLikeRef ? (toRow.data.name || toInput) : (toInput || '').slice(0, 8) + '…';
+          var senderPid = (fromRow.data && fromRow.data.player_id ? fromRow.data.player_id : (typeof getPvpPlayerId === 'function' ? getPvpPlayerId() : null)) || '';
+          if (senderPid) supabase.from('token_sends').insert({ sender_player_id: senderPid, recipient_player_id: pid || null, recipient_label: (toRow.data.name || toInput || toLabel || '').toString().trim(), amount: amount }).then(function() {});
+          if (typeof loadSendTransactions === 'function') loadSendTransactions();
           sendFeedback.textContent = 'Sent ' + amount + ' tokens to ' + toLabel;
           sendFeedback.classList.add('text-neon-green');
           if (sendToAddress) sendToAddress.value = '';
@@ -3682,6 +3707,29 @@
             if (ref && sendToInput) sendToInput.value = ref;
           });
         });
+      });
+    }
+    function loadSendTransactions() {
+      var listEl = document.getElementById('send-transactions-list');
+      if (!listEl) return;
+      var me = (typeof getPvpPlayerId === 'function' ? getPvpPlayerId() : null) || '';
+      var supabase = window.supabaseClient;
+      if (!supabase) { listEl.innerHTML = '<span class="text-gray-500">Not available.</span>'; return; }
+      listEl.innerHTML = '<span class="text-gray-500">Loading…</span>';
+      supabase.from('token_sends').select('amount, recipient_label, created_at').eq('sender_player_id', me).order('created_at', { ascending: false }).limit(20).then(function(r) {
+        if (r.error || !r.data || r.data.length === 0) {
+          listEl.innerHTML = '<span class="text-gray-500">No sends yet. Tokens you send appear here.</span>';
+          return;
+        }
+        var now = Date.now();
+        listEl.innerHTML = r.data.map(function(row) {
+          var amt = row.amount != null ? row.amount : 0;
+          var label = (row.recipient_label || 'Unknown').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+          var created = row.created_at ? new Date(row.created_at).getTime() : now;
+          var ago = now - created;
+          var agoStr = ago < 60000 ? 'just now' : ago < 3600000 ? Math.floor(ago / 60000) + ' min ago' : ago < 86400000 ? Math.floor(ago / 3600000) + ' h ago' : Math.floor(ago / 86400000) + ' d ago';
+          return '<div class="py-1 border-b border-gray-700/50 last:border-0">' + amt + ' tokens → ' + label + ' <span class="text-gray-500">' + agoStr + '</span></div>';
+        }).join('');
       });
     }
     document.getElementById('send-refresh-players-btn') && document.getElementById('send-refresh-players-btn').addEventListener('click', function() {
@@ -3909,18 +3957,19 @@
     function getFriendTokenCache() {
       try {
         var raw = localStorage.getItem('tokenClicker_friendTokens');
-        if (!raw) return { byWallet: {}, byRefCode: {} };
+        if (!raw) return { byWallet: {}, byRefCode: {}, byPlayerId: {} };
         var parsed = JSON.parse(raw);
-        return { byWallet: parsed.byWallet || {}, byRefCode: parsed.byRefCode || {} };
-      } catch (e) { return { byWallet: {}, byRefCode: {} }; }
+        return { byWallet: parsed.byWallet || {}, byRefCode: parsed.byRefCode || {}, byPlayerId: parsed.byPlayerId || {} };
+      } catch (e) { return { byWallet: {}, byRefCode: {}, byPlayerId: {} }; }
     }
     function setFriendTokenCache(cache) {
       try { localStorage.setItem('tokenClicker_friendTokens', JSON.stringify(cache)); } catch (e) {}
     }
-    function mergeFriendTokenCache(byWallet, byRefCode) {
+    function mergeFriendTokenCache(byWallet, byRefCode, byPlayerId) {
       var c = getFriendTokenCache();
       if (byWallet) Object.keys(byWallet).forEach(function(k) { c.byWallet[k] = byWallet[k]; });
       if (byRefCode) Object.keys(byRefCode).forEach(function(k) { c.byRefCode[k.toUpperCase()] = byRefCode[k]; });
+      if (byPlayerId) Object.keys(byPlayerId).forEach(function(k) { var key = (k || '').toString().trim(); if (key) c.byPlayerId[key] = byPlayerId[k]; });
       setFriendTokenCache(c);
     }
     function removeFromFriendTokenCache(wallet, refCode) {
@@ -3974,17 +4023,27 @@
         if (!row) return;
         var w = (row.wallet_address || '').trim();
         var r = (row.ref_code || '').trim().toUpperCase();
+        var p = (row.player_id || '').toString().trim();
         var t = row.tokens != null ? row.tokens : 0;
         var cache = getFriendTokenCache();
         var changed = false;
-        if (w && (w in cache.byWallet)) { mergeFriendTokenCache({ [w]: t }, null); changed = true; }
-        if (r && (r in cache.byRefCode)) { mergeFriendTokenCache(null, { [r]: t }); changed = true; }
+        if (w && (w in cache.byWallet)) { mergeFriendTokenCache({ [w]: t }, null, null); changed = true; }
+        if (r && (r in cache.byRefCode)) { mergeFriendTokenCache(null, { [r]: t }, null); changed = true; }
+        if (p && (p in cache.byPlayerId)) { mergeFriendTokenCache(null, null, { [p]: t }); changed = true; }
         if (changed) {
           var fm = document.getElementById('friends-modal');
           if (fm && !fm.classList.contains('hidden')) {
             if (typeof loadFriendsInvited === 'function') loadFriendsInvited();
             if (typeof loadFriendRequests === 'function') loadFriendRequests();
             if (typeof loadFriendsAddedByCode === 'function') loadFriendsAddedByCode();
+          }
+          var rowWrap = document.getElementById('pvp-player-row-above-create');
+          if (rowWrap && !rowWrap.classList.contains('hidden')) {
+            var friendRef = (rowWrap.getAttribute('data-friend-ref') || '').trim().toUpperCase();
+            if (friendRef && r === friendRef) {
+              var tokensEl = document.getElementById('pvp-player-row-tokens');
+              if (tokensEl) tokensEl.textContent = t + ' tokens';
+            }
           }
         }
       }).subscribe();
@@ -4123,7 +4182,7 @@
           if (typeof loadFriendRequests === 'function') loadFriendRequests();
           if (typeof loadFriendsAddedByCode === 'function') loadFriendsAddedByCode();
         }
-      }, 15000);
+      }, 5000);
     }
     function stopFriendsTokenPolling() {
       if (friendsPollInterval) { clearInterval(friendsPollInterval); friendsPollInterval = null; }
@@ -4150,10 +4209,15 @@
           wallets.forEach(function(w) { tokensByWallet[w] = cache.byWallet[w] != null ? cache.byWallet[w] : null; });
           renderInvitedList(r.data, tokensByWallet);
           if (wallets.length > 0) {
-            supabase.from('leaderboard').select('wallet_address, tokens').in('wallet_address', wallets).then(function(lr) {
+            supabase.from('leaderboard').select('wallet_address, tokens, player_id').in('wallet_address', wallets).then(function(lr) {
               if (lr.data) {
-                lr.data.forEach(function(row) { tokensByWallet[row.wallet_address] = row.tokens != null ? row.tokens : 0; });
-                mergeFriendTokenCache(tokensByWallet, null);
+                var byPlayerId = {};
+                lr.data.forEach(function(row) {
+                  tokensByWallet[row.wallet_address] = row.tokens != null ? row.tokens : 0;
+                  var pid = (row.player_id || '').toString().trim();
+                  if (pid) byPlayerId[pid] = row.tokens != null ? row.tokens : 0;
+                });
+                mergeFriendTokenCache(tokensByWallet, null, byPlayerId);
               }
               renderInvitedList(r.data, tokensByWallet);
               subscribeFriendsLeaderboardRealtime();
@@ -4460,12 +4524,18 @@
           codes.forEach(function(c) { var u = c.toUpperCase(); tokensByCode[u] = cache.byRefCode[u] != null ? cache.byRefCode[u] : null; });
           renderAddedList(uniqueFriends, tokensByCode);
           if (codes.length > 0) {
-            supabase.from('leaderboard').select('ref_code, tokens').in('ref_code', codes).then(function(lr) {
+            supabase.from('leaderboard').select('ref_code, tokens, player_id').in('ref_code', codes).then(function(lr) {
               if (lr.data) {
-                lr.data.forEach(function(row) { tokensByCode[(row.ref_code || '').toUpperCase()] = row.tokens != null ? row.tokens : 0; });
+                var byPlayerId = {};
+                lr.data.forEach(function(row) {
+                  var u = (row.ref_code || '').toUpperCase();
+                  tokensByCode[u] = row.tokens != null ? row.tokens : 0;
+                  var pid = (row.player_id || '').toString().trim();
+                  if (pid) byPlayerId[pid] = row.tokens != null ? row.tokens : 0;
+                });
                 var byRef = {};
                 Object.keys(tokensByCode).forEach(function(k) { byRef[k] = tokensByCode[k]; });
-                mergeFriendTokenCache(null, byRef);
+                mergeFriendTokenCache(null, byRef, byPlayerId);
               }
               renderAddedList(uniqueFriends, tokensByCode);
               subscribeFriendsLeaderboardRealtime();
@@ -5073,6 +5143,60 @@
       if (!btn) return;
       btn.disabled = !hasValidWagerSelection();
     }
+    function updatePvpPlayerRowAboveCreate() {
+      var rowWrap = document.getElementById('pvp-player-row-above-create');
+      var nameEl = document.getElementById('pvp-player-row-name');
+      var tokensEl = document.getElementById('pvp-player-row-tokens');
+      var starBtn = document.getElementById('pvp-player-row-favorite-btn');
+      var removeBtn = document.getElementById('pvp-player-row-remove-btn');
+      if (!rowWrap) return;
+      var me = typeof getPvpPlayerId === 'function' ? getPvpPlayerId() : null;
+      var supabase = window.supabaseClient;
+      if (!me || !supabase) { rowWrap.classList.add('hidden'); rowWrap.setAttribute('data-friend-ref', ''); rowWrap.setAttribute('data-friend-name', ''); return; }
+      supabase.from('friends_by_code').select('friend_ref_code, friend_name, created_at').eq('user_wallet', me).order('created_at', { ascending: false }).limit(50).then(function(r) {
+        if (r.error || !r.data || r.data.length === 0) { rowWrap.classList.add('hidden'); rowWrap.setAttribute('data-friend-ref', ''); rowWrap.setAttribute('data-friend-name', ''); return; }
+        var favRefs = typeof getFavoriteFriendRefs === 'function' ? getFavoriteFriendRefs() : [];
+        var list = r.data.slice();
+        list.sort(function(a, b) {
+          var ac = (a.friend_ref_code || '').trim().toUpperCase();
+          var bc = (b.friend_ref_code || '').trim().toUpperCase();
+          var aFav = favRefs.indexOf(ac) >= 0 ? 1 : 0;
+          var bFav = favRefs.indexOf(bc) >= 0 ? 1 : 0;
+          if (bFav !== aFav) return bFav - aFav;
+          return 0;
+        });
+        var first = list[0];
+        var ref = (first.friend_ref_code || '').trim().toUpperCase();
+        var name = (first.friend_name || first.friend_ref_code || 'Friend').trim();
+        var cache = typeof getFriendTokenCache === 'function' ? getFriendTokenCache() : { byRefCode: {} };
+        var tokenCount = cache.byRefCode && ref ? (cache.byRefCode[ref] != null ? cache.byRefCode[ref] : null) : null;
+        rowWrap.setAttribute('data-friend-ref', ref);
+        rowWrap.setAttribute('data-friend-name', name);
+        if (nameEl) nameEl.textContent = name;
+        if (tokensEl) tokensEl.textContent = (tokenCount != null ? tokenCount : '—') + (tokenCount != null ? ' tokens' : '');
+        if (starBtn) {
+          var isFav = typeof isFavoriteFriendRef === 'function' && isFavoriteFriendRef(ref);
+          starBtn.textContent = isFav ? '★' : '☆';
+          starBtn.title = isFav ? 'Remove from favorites' : 'Add to favorites';
+          starBtn.classList.toggle('text-neon-yellow', isFav);
+          starBtn.classList.toggle('bg-neon-yellow/20', isFav);
+          starBtn.classList.toggle('text-gray-500', !isFav);
+        }
+        if (removeBtn) removeBtn.classList.remove('hidden');
+        rowWrap.classList.remove('hidden');
+        if (ref && typeof subscribeFriendsLeaderboardRealtime === 'function') subscribeFriendsLeaderboardRealtime();
+        if (ref && tokenCount == null && typeof mergeFriendTokenCache === 'function') {
+          supabase.from('leaderboard').select('ref_code, tokens').ilike('ref_code', ref).limit(1).then(function(lr) {
+            if (lr.data && lr.data[0] != null && tokensEl && rowWrap.getAttribute('data-friend-ref') === ref) {
+              var t = lr.data[0].tokens != null ? lr.data[0].tokens : 0;
+              tokensEl.textContent = t + ' tokens';
+              mergeFriendTokenCache(null, { [ref]: t }, null);
+            }
+          });
+        }
+      });
+    }
+    window.updatePvpPlayerRowAboveCreate = updatePvpPlayerRowAboveCreate;
     function openPvpCreateRoomModal(friendName) {
       var modal = document.getElementById('pvp-create-room-modal');
       if (!modal) return;
@@ -5740,6 +5864,31 @@
     if (pvpCreateBtn) pvpCreateBtn.addEventListener('click', createPvpRoom);
     if (pvpRefreshBtn) pvpRefreshBtn.addEventListener('click', function() { loadPvpRooms(); });
     document.getElementById('pvp-open-create-room-btn') && document.getElementById('pvp-open-create-room-btn').addEventListener('click', function() { openPvpCreateRoomModal(null); });
+    document.getElementById('pvp-player-row-duel-btn') && document.getElementById('pvp-player-row-duel-btn').addEventListener('click', function() {
+      var row = document.getElementById('pvp-player-row-above-create');
+      var friendName = row && row.getAttribute('data-friend-name');
+      openPvpCreateRoomModal(friendName || null);
+    });
+    document.getElementById('pvp-player-row-favorite-btn') && document.getElementById('pvp-player-row-favorite-btn').addEventListener('click', function() {
+      var row = document.getElementById('pvp-player-row-above-create');
+      var ref = row && row.getAttribute('data-friend-ref');
+      if (!ref || typeof toggleFavoriteFriendRef !== 'function') return;
+      toggleFavoriteFriendRef(ref);
+      if (typeof updatePvpPlayerRowAboveCreate === 'function') updatePvpPlayerRowAboveCreate();
+    });
+    document.getElementById('pvp-player-row-remove-btn') && document.getElementById('pvp-player-row-remove-btn').addEventListener('click', function() {
+      var row = document.getElementById('pvp-player-row-above-create');
+      var ref = row && row.getAttribute('data-friend-ref');
+      var name = row && row.getAttribute('data-friend-name') || 'this friend';
+      if (!ref || !confirm('Remove ' + name + ' from friends?')) return;
+      var me = typeof getPvpPlayerId === 'function' ? getPvpPlayerId() : null;
+      if (!me || !window.supabaseClient) return;
+      window.supabaseClient.from('friends_by_code').delete().eq('user_wallet', me).eq('friend_ref_code', ref).then(function(res) {
+        if (res.error) { console.error('Remove friend failed:', res.error); return; }
+        if (typeof removeFromFriendTokenCache === 'function') removeFromFriendTokenCache(null, ref);
+        if (typeof updatePvpPlayerRowAboveCreate === 'function') updatePvpPlayerRowAboveCreate();
+      });
+    });
     document.getElementById('pvp-create-room-modal-close') && document.getElementById('pvp-create-room-modal-close').addEventListener('click', closePvpCreateRoomModal);
     document.getElementById('pvp-create-room-modal-cancel') && document.getElementById('pvp-create-room-modal-cancel').addEventListener('click', closePvpCreateRoomModal);
     document.getElementById('pvp-create-room-modal') && document.getElementById('pvp-create-room-modal').addEventListener('click', function(e) { if (e.target && e.target.id === 'pvp-create-room-modal') closePvpCreateRoomModal(); });
@@ -5942,6 +6091,7 @@
         }
       }
       if (pageId === 'multiplayer') {
+        if (typeof updatePvpPlayerRowAboveCreate === 'function') updatePvpPlayerRowAboveCreate();
         var balEl = document.getElementById('pvp-create-balance');
         if (balEl && typeof getInGameTokenBalance === 'function') balEl.textContent = getInGameTokenBalance();
         if (typeof loadLeaderboardPvp === 'function') loadLeaderboardPvp();
