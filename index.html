@@ -264,6 +264,42 @@
       70% { opacity: 1; transform: translate(-50%, -50%) translateY(-50px) scale(1); }
       100% { opacity: 0; transform: translate(-50%, -50%) translateY(-70px) scale(0.9); }
     }
+    /* Crit hit visual feedback */
+    .tap-value-float.crit-float {
+      font-size: 22px;
+      color: #ff00aa;
+      text-shadow: 0 0 12px rgba(255,0,170,0.9), 0 0 24px rgba(255,0,170,0.5), 0 1px 2px rgba(0,0,0,0.8);
+      animation: critFloat 1.2s ease-out forwards;
+    }
+    @keyframes critFloat {
+      0% { opacity: 1; transform: translate(-50%, -50%) translateY(0) scale(1.6); }
+      20% { transform: translate(-50%, -50%) translateY(-10px) scale(1.8); }
+      70% { opacity: 1; transform: translate(-50%, -50%) translateY(-60px) scale(1.1); }
+      100% { opacity: 0; transform: translate(-50%, -50%) translateY(-85px) scale(0.9); }
+    }
+    .nft-clicker.crit-flash {
+      box-shadow: 0 0 30px rgba(255,0,170,0.6), 0 0 60px rgba(255,0,170,0.3) !important;
+      filter: brightness(1.3);
+    }
+    /* Level-up celebration */
+    .level-up-float {
+      position: fixed;
+      pointer-events: none;
+      z-index: 102;
+      font-size: 16px;
+      font-weight: 900;
+      color: #00fff7;
+      text-shadow: 0 0 12px rgba(0,255,247,0.9), 0 0 24px rgba(0,255,247,0.5);
+      animation: levelUpFloat 2s ease-out forwards;
+      transform: translate(-50%, -50%);
+      white-space: nowrap;
+    }
+    @keyframes levelUpFloat {
+      0% { opacity: 0; transform: translate(-50%, -50%) translateY(0) scale(0.5); }
+      15% { opacity: 1; transform: translate(-50%, -50%) translateY(-10px) scale(1.3); }
+      50% { opacity: 1; transform: translate(-50%, -50%) translateY(-40px) scale(1.1); }
+      100% { opacity: 0; transform: translate(-50%, -50%) translateY(-90px) scale(0.8); }
+    }
   </style>
 </head>
 <body class="bg-dark text-white font-pixel text-xs md:text-sm antialiased" style="background:#0a0a0a; color:#fff; margin:0; min-height:100vh;">
@@ -668,7 +704,7 @@
     <!-- Home -->
     <section id="page-home" class="page active p-4">
       <!-- Metric windows above NFT -->
-      <div class="grid grid-cols-3 gap-2 mb-4">
+      <div class="grid grid-cols-4 gap-2 mb-4">
         <div class="bg-pixel-panel border-2 border-gray-700 p-2 text-center rounded">
           <div class="text-gray-500 home-center-text">CLICK RATE</div>
           <div class="flex items-baseline justify-center gap-0.5">
@@ -685,6 +721,13 @@
           <div class="flex items-baseline justify-center gap-0.5">
             <span id="peak-click-rate" class="neon-text-pink home-center-value" title="Best taps in 1 sec">0</span>
             <span class="text-[9px] text-gray-600">/s</span>
+          </div>
+        </div>
+        <div id="combo-display" class="bg-pixel-panel border-2 border-gray-700 p-2 text-center rounded transition-colors duration-200">
+          <div class="text-gray-500 home-center-text">COMBO</div>
+          <div class="flex items-baseline justify-center gap-0.5">
+            <span id="combo-multiplier" class="home-center-value" style="color:#FFD700; text-shadow:0 0 6px rgba(255,215,0,0.5)">1.0</span>
+            <span class="text-[9px] text-gray-600">x</span>
           </div>
         </div>
       </div>
@@ -847,7 +890,7 @@
               <button type="button" class="boost-btn border-2 border-neon-cyan text-neon-cyan px-3 py-1 rounded text-[10px] hover:bg-neon-cyan/10 disabled:opacity-50 disabled:cursor-not-allowed" data-cost="60" data-boost="overcharge">USE</button>
             </div>
             <div class="bg-pixel-panel border-2 border-gray-700 p-3 rounded flex flex-wrap justify-between items-center gap-2">
-              <div class="flex-1 min-w-0"><span>🧿 Token Magnet +35% drops 2m</span><div class="text-neon-yellow text-[10px] font-bold mt-1">100 tokens</div></div>
+              <div class="flex-1 min-w-0"><span>🧿 Token Magnet +75% drops 2m</span><div class="text-neon-yellow text-[10px] font-bold mt-1">100 tokens</div></div>
               <button type="button" class="boost-btn border-2 border-neon-green text-neon-green px-3 py-1 rounded text-[10px] hover:bg-neon-green/10 disabled:opacity-50 disabled:cursor-not-allowed" data-cost="100" data-boost="tokenMagnet">USE</button>
             </div>
             <div class="bg-pixel-panel border-2 border-gray-700 p-3 rounded flex flex-wrap justify-between items-center gap-2">
@@ -1227,8 +1270,21 @@
             <label class="text-[9px] text-gray-500 uppercase tracking-wider block">Recipient: wallet address or internal wallet code</label>
             <div class="flex gap-2 items-center">
               <input type="text" id="send-to-address" placeholder="UQBH... or REFABC123" class="flex-1 min-w-0 bg-black border-2 border-gray-600 rounded px-2 py-2 text-neon-cyan text-[10px] font-mono" spellcheck="false" />
-              <button type="button" id="send-tokens-btn" class="shrink-0 border-2 border-neon-yellow text-neon-yellow px-3 py-2 rounded text-[10px] hover:bg-neon-yellow/10 disabled:opacity-50">SEND</button>
             </div>
+          </div>
+          <div class="mb-2">
+            <label class="text-[9px] text-gray-500 uppercase tracking-wider block mb-1">What's it for?</label>
+            <input type="text" id="send-message" maxlength="100" placeholder="GG on that duel! / PVP rematch fund / Thanks for the carry" class="w-full bg-black border-2 border-gray-600 rounded px-2 py-2 text-neon-yellow text-[10px] focus:border-neon-yellow/60" spellcheck="true" />
+            <div class="flex gap-1.5 mt-1.5 flex-wrap" id="send-quick-messages">
+              <button type="button" class="send-quick-msg py-1 px-2 border border-gray-600 text-gray-400 rounded-full text-[8px] hover:border-neon-yellow hover:text-neon-yellow hover:bg-neon-yellow/10">GG</button>
+              <button type="button" class="send-quick-msg py-1 px-2 border border-gray-600 text-gray-400 rounded-full text-[8px] hover:border-neon-yellow hover:text-neon-yellow hover:bg-neon-yellow/10">Thanks!</button>
+              <button type="button" class="send-quick-msg py-1 px-2 border border-gray-600 text-gray-400 rounded-full text-[8px] hover:border-neon-yellow hover:text-neon-yellow hover:bg-neon-yellow/10">Rematch fund</button>
+              <button type="button" class="send-quick-msg py-1 px-2 border border-gray-600 text-gray-400 rounded-full text-[8px] hover:border-neon-yellow hover:text-neon-yellow hover:bg-neon-yellow/10">For the squad</button>
+              <button type="button" class="send-quick-msg py-1 px-2 border border-gray-600 text-gray-400 rounded-full text-[8px] hover:border-neon-yellow hover:text-neon-yellow hover:bg-neon-yellow/10">Pay up!</button>
+            </div>
+          </div>
+          <div class="flex justify-end">
+            <button type="button" id="send-tokens-btn" class="border-2 border-neon-yellow text-neon-yellow px-4 py-2 rounded text-[10px] hover:bg-neon-yellow/10 disabled:opacity-50">SEND</button>
           </div>
           <p id="send-feedback" class="text-[10px] mt-2 hidden"></p>
           <div class="mt-4 pt-3 border-t border-gray-700">
@@ -1549,7 +1605,7 @@
     function rollCrit() {
       var now = Date.now();
       if (now - critLastProcAt < CRIT_ICD_MS) return false;
-      var chance = baseCritChance * (isCritActive() ? 2 : 1);
+      var chance = (baseCritChance + getBirdCritBonus()) * (isCritActive() ? 2 : 1);
       if (Math.random() < chance) {
         critLastProcAt = now;
         critProcUntil = now + CRIT_PROC_DURATION_MS;
@@ -1614,9 +1670,10 @@
       return fromLevel + fromTapPower + fromCapacityBoost;
     }
     function getPowerRegenPerSec() {
-      if (hasSuperCooldownBoost) return POWER_REGEN_BASE + 2;
-      if (hasCooldownBoost) return POWER_REGEN_BASE + 1;
-      return POWER_REGEN_BASE;
+      var birdBonus = getBirdRegenBonus();
+      if (hasSuperCooldownBoost) return POWER_REGEN_BASE + 2 + birdBonus;
+      if (hasCooldownBoost) return POWER_REGEN_BASE + 1 + birdBonus;
+      return POWER_REGEN_BASE + birdBonus;
     }
     let autoclickerInterval = null;
 
@@ -1785,6 +1842,25 @@
       }
       return level;
     }
+    function getBirdLevelIndex(taps) {
+      var idx = 0;
+      for (var i = BIRD_LEVELS.length - 1; i >= 0; i--) {
+        if (taps >= BIRD_LEVELS[i].taps) { idx = i; break; }
+      }
+      return idx;
+    }
+    // Bird tier: 0=Egg, 1=Chick, 2=Adult, 3=Elite, 4=Legend
+    function getBirdTier(taps) {
+      if (taps >= 3000) return 4;
+      if (taps >= 2000) return 3;
+      if (taps >= 1000) return 2;
+      if (taps >= 1) return 1;
+      return 0;
+    }
+    // Bonus crit chance from bird tier: +2% per tier (Egg=0%, Chick=+2%, Adult=+4%, Elite=+6%, Legend=+8%)
+    function getBirdCritBonus() { return getBirdTier(totalClicks) * 0.02; }
+    // Bonus power regen from bird tier: +0.5/sec per tier
+    function getBirdRegenBonus() { return getBirdTier(totalClicks) * 0.5; }
     function getReviveCost() {
       const percentCost = Math.ceil(tokens * REVIVE_PERCENT);
       return Math.max(REVIVE_MIN, percentCost);
@@ -2014,6 +2090,19 @@
         var nextTotalAt = Math.ceil((earnedFromTaps + 1) * 10 / tapPower);
         var tapsNeeded = Math.max(1, nextTotalAt - totalClicks);
         nextMilestoneEl.textContent = 'Next token in ' + tapsNeeded + ' tap' + (tapsNeeded === 1 ? '' : 's');
+      }
+      // Combo multiplier display
+      var comboVal = getComboMultiplier();
+      var comboEl = document.getElementById('combo-multiplier');
+      var comboBox = document.getElementById('combo-display');
+      if (comboEl) {
+        comboEl.textContent = comboVal.toFixed(1);
+        if (comboBox) {
+          if (comboVal >= 1.4) { comboBox.style.borderColor = '#ff00aa'; comboEl.style.color = '#ff00aa'; comboEl.style.textShadow = '0 0 10px rgba(255,0,170,0.8)'; }
+          else if (comboVal >= 1.2) { comboBox.style.borderColor = '#FFD700'; comboEl.style.color = '#FFD700'; comboEl.style.textShadow = '0 0 8px rgba(255,215,0,0.7)'; }
+          else if (comboVal > 1.0) { comboBox.style.borderColor = '#00ff88'; comboEl.style.color = '#00ff88'; comboEl.style.textShadow = '0 0 6px rgba(0,255,136,0.5)'; }
+          else { comboBox.style.borderColor = ''; comboEl.style.color = '#9ca3af'; comboEl.style.textShadow = 'none'; }
+        }
       }
       updateBadges();
       var pvpBal = document.getElementById('pvp-create-balance');
@@ -2521,15 +2610,21 @@
       updatePowerBar();
 
       var eff = getEffectiveTapPower();
+      var prevLevelIdx = getBirdLevelIndex(totalClicks);
       totalClicks++;
+      var newLevelIdx = getBirdLevelIndex(totalClicks);
+      if (newLevelIdx > prevLevelIdx) { window._levelUpName = BIRD_LEVELS[newLevelIdx].emoji + ' ' + BIRD_LEVELS[newLevelIdx].name; }
+      else { window._levelUpName = null; }
       const prevEffective = (totalClicks - 1) * eff;
       const newEffective = totalClicks * eff;
       var earned = Math.floor(newEffective / CLICKS_PER_TOKEN) - Math.floor(prevEffective / CLICKS_PER_TOKEN);
       var combo = getComboMultiplier();
       earned = Math.max(0, Math.floor(earned * combo));
-      if (rollCrit()) earned *= 2;
-      if (hasTokenMagnet()) earned = Math.max(0, Math.floor(earned * 1.35));
+      var didCrit = rollCrit();
+      if (didCrit) earned *= 2;
+      if (hasTokenMagnet()) earned = Math.max(0, Math.floor(earned * 1.75));
       tokens += earned;
+      window._lastClickCrit = didCrit;
 
       const now = lastClickTime;
       const nowSec = now / 1000;
@@ -2608,13 +2703,45 @@
       playTapSound();
       triggerHaptics();
 
+      var wasCrit = window._lastClickCrit;
+      var displayText = earned > 0 ? '+' + earned : '+1';
       var valueEl = document.createElement('div');
-      valueEl.className = 'tap-value-float';
-      valueEl.textContent = '+1';
+      valueEl.className = wasCrit ? 'tap-value-float crit-float' : 'tap-value-float';
+      valueEl.textContent = wasCrit ? 'CRIT! ' + displayText : displayText;
       valueEl.style.left = cx + 'px';
       valueEl.style.top = cy + 'px';
       document.body.appendChild(valueEl);
-      setTimeout(function() { if (valueEl.parentNode) valueEl.remove(); }, 1100);
+      setTimeout(function() { if (valueEl.parentNode) valueEl.remove(); }, wasCrit ? 1300 : 1100);
+
+      // Crit flash on the cardinal
+      if (wasCrit && nftClicker) {
+        nftClicker.classList.add('crit-flash');
+        setTimeout(function() { if (nftClicker) nftClicker.classList.remove('crit-flash'); }, 200);
+      }
+      // Level-up celebration
+      if (window._levelUpName) {
+        var lvlEl = document.createElement('div');
+        lvlEl.className = 'level-up-float';
+        lvlEl.textContent = 'LEVEL UP! ' + window._levelUpName;
+        lvlEl.style.left = cx + 'px';
+        lvlEl.style.top = (cy - 30) + 'px';
+        document.body.appendChild(lvlEl);
+        setTimeout(function() { if (lvlEl.parentNode) lvlEl.remove(); }, 2100);
+        // Play a special level-up sound
+        try {
+          var ctx = window.tapSoundCtx || (window.tapSoundCtx = new (window.AudioContext || window.webkitAudioContext)());
+          if (ctx.state === 'suspended') ctx.resume();
+          [523.25, 659.25, 783.99].forEach(function(freq, i) {
+            var osc = ctx.createOscillator(); var gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.frequency.value = freq; osc.type = 'sine';
+            gain.gain.setValueAtTime(0.12, ctx.currentTime + i * 0.12);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.3);
+            osc.start(ctx.currentTime + i * 0.12);
+            osc.stop(ctx.currentTime + i * 0.12 + 0.3);
+          });
+        } catch (e) {}
+      }
     }
 
     if (nftClicker) nftClicker.addEventListener('click', function(e) {
@@ -3559,10 +3686,21 @@
         sendAmount.value = Math.max(0, Math.floor(bal));
       });
     }
+    // Quick message chips
+    var sendMessageInput = document.getElementById('send-message');
+    document.querySelectorAll('.send-quick-msg').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        if (sendMessageInput) {
+          sendMessageInput.value = btn.textContent.trim();
+          sendMessageInput.focus();
+        }
+      });
+    });
     if (sendTokensBtn && sendFeedback) {
       sendTokensBtn.addEventListener('click', async function() {
         var toInput = (sendToAddress && sendToAddress.value) ? sendToAddress.value.trim() : '';
         var amount = sendAmount ? parseInt(sendAmount.value, 10) : 0;
+        var sendMsg = sendMessageInput ? sendMessageInput.value.trim().slice(0, 100) : '';
         if (!toInput) { sendFeedback.textContent = 'Enter recipient wallet address or ref code.'; sendFeedback.classList.remove('hidden'); sendFeedback.classList.remove('text-neon-green'); sendFeedback.classList.add('text-neon-pink'); return; }
         if (!amount || amount < 1) { sendFeedback.textContent = 'Enter amount (1+).'; sendFeedback.classList.remove('hidden'); sendFeedback.classList.remove('text-neon-green'); sendFeedback.classList.add('text-neon-pink'); return; }
         var me = typeof getPvpPlayerId === 'function' ? getPvpPlayerId() : null;
@@ -3647,16 +3785,19 @@
           if (wid && wid !== pid) recipientIds.push(wid);
           if (recipientIds.length === 0 && (pid || wid)) recipientIds.push(pid || wid);
           recipientIds.forEach(function(recipientId) {
-            if (recipientId) supabase.from('token_received_notifications').insert({ recipient_player_id: recipientId, sender_name: senderName, amount: amount }).then(function() {});
+            if (recipientId) supabase.from('token_received_notifications').insert({ recipient_player_id: recipientId, sender_name: senderName, amount: amount, message: sendMsg || null }).then(function() {});
           });
           var toLabel = looksLikeRef ? (toRow.data.name || toInput) : (toInput || '').slice(0, 8) + '…';
           var senderPid = (fromRow.data && fromRow.data.player_id ? fromRow.data.player_id : (typeof getPvpPlayerId === 'function' ? getPvpPlayerId() : null)) || '';
-          if (senderPid) supabase.from('token_sends').insert({ sender_player_id: senderPid, recipient_player_id: pid || null, recipient_label: (toRow.data.name || toInput || toLabel || '').toString().trim(), amount: amount }).then(function() {});
+          if (senderPid) supabase.from('token_sends').insert({ sender_player_id: senderPid, recipient_player_id: pid || null, recipient_label: (toRow.data.name || toInput || toLabel || '').toString().trim(), amount: amount, message: sendMsg || null }).then(function() {});
           if (typeof loadSendTransactions === 'function') loadSendTransactions();
-          sendFeedback.textContent = 'Sent ' + amount + ' tokens to ' + toLabel;
+          var confirmText = 'Sent ' + amount + ' tokens to ' + toLabel;
+          if (sendMsg) confirmText += ' — "' + sendMsg + '"';
+          sendFeedback.textContent = confirmText;
           sendFeedback.classList.add('text-neon-green');
           if (sendToAddress) sendToAddress.value = '';
           if (sendAmount) sendAmount.value = '';
+          if (sendMessageInput) sendMessageInput.value = '';
         } catch (e) {
           tokens += amount;
           save();
@@ -3718,7 +3859,7 @@
       var supabase = window.supabaseClient;
       if (!supabase) { listEl.innerHTML = '<span class="text-gray-500">Not available.</span>'; return; }
       listEl.innerHTML = '<span class="text-gray-500">Loading…</span>';
-      supabase.from('token_sends').select('amount, recipient_label, created_at').eq('sender_player_id', me).order('created_at', { ascending: false }).limit(20).then(function(r) {
+      supabase.from('token_sends').select('amount, recipient_label, message, created_at').eq('sender_player_id', me).order('created_at', { ascending: false }).limit(20).then(function(r) {
         if (r.error || !r.data || r.data.length === 0) {
           listEl.innerHTML = '<span class="text-gray-500">No sends yet. Tokens you send appear here.</span>';
           return;
@@ -3727,10 +3868,12 @@
         listEl.innerHTML = r.data.map(function(row) {
           var amt = row.amount != null ? row.amount : 0;
           var label = (row.recipient_label || 'Unknown').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+          var msg = (row.message || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
           var created = row.created_at ? new Date(row.created_at).getTime() : now;
           var ago = now - created;
           var agoStr = ago < 60000 ? 'just now' : ago < 3600000 ? Math.floor(ago / 60000) + ' min ago' : ago < 86400000 ? Math.floor(ago / 3600000) + ' h ago' : Math.floor(ago / 86400000) + ' d ago';
-          return '<div class="py-1 border-b border-gray-700/50 last:border-0">' + amt + ' tokens → ' + label + ' <span class="text-gray-500">' + agoStr + '</span></div>';
+          var msgHtml = msg ? '<div class="text-neon-yellow/70 text-[9px] mt-0.5">&quot;' + msg + '&quot;</div>' : '';
+          return '<div class="py-1.5 border-b border-gray-700/50 last:border-0"><div>' + amt + ' tokens → ' + label + ' <span class="text-gray-500">' + agoStr + '</span></div>' + msgHtml + '</div>';
         }).join('');
       });
     }
@@ -4134,7 +4277,9 @@
           if (!row || (row.recipient_player_id || '').trim() !== meId) return;
           var senderName = (row.sender_name || 'Someone').trim();
           var amt = row.amount != null ? parseInt(row.amount, 10) : 0;
+          var senderMsg = (row.message || '').trim();
           var msg = 'You received ' + (amt > 0 ? amt + ' tokens from ' + senderName : 'tokens from ' + senderName) + '.';
+          if (senderMsg) msg += ' "' + senderMsg + '"';
           if (typeof syncTokensFromLeaderboard === 'function') syncTokensFromLeaderboard(function() {
             try { if (typeof pushNotification === 'function') pushNotification(msg); } catch (e) {}
           });
