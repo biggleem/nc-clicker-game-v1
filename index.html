@@ -1270,8 +1270,21 @@
             <label class="text-[9px] text-gray-500 uppercase tracking-wider block">Recipient: wallet address or internal wallet code</label>
             <div class="flex gap-2 items-center">
               <input type="text" id="send-to-address" placeholder="UQBH... or REFABC123" class="flex-1 min-w-0 bg-black border-2 border-gray-600 rounded px-2 py-2 text-neon-cyan text-[10px] font-mono" spellcheck="false" />
-              <button type="button" id="send-tokens-btn" class="shrink-0 border-2 border-neon-yellow text-neon-yellow px-3 py-2 rounded text-[10px] hover:bg-neon-yellow/10 disabled:opacity-50">SEND</button>
             </div>
+          </div>
+          <div class="mb-2">
+            <label class="text-[9px] text-gray-500 uppercase tracking-wider block mb-1">What's it for?</label>
+            <input type="text" id="send-message" maxlength="100" placeholder="GG on that duel! / PVP rematch fund / Thanks for the carry" class="w-full bg-black border-2 border-gray-600 rounded px-2 py-2 text-neon-yellow text-[10px] focus:border-neon-yellow/60" spellcheck="true" />
+            <div class="flex gap-1.5 mt-1.5 flex-wrap" id="send-quick-messages">
+              <button type="button" class="send-quick-msg py-1 px-2 border border-gray-600 text-gray-400 rounded-full text-[8px] hover:border-neon-yellow hover:text-neon-yellow hover:bg-neon-yellow/10">GG</button>
+              <button type="button" class="send-quick-msg py-1 px-2 border border-gray-600 text-gray-400 rounded-full text-[8px] hover:border-neon-yellow hover:text-neon-yellow hover:bg-neon-yellow/10">Thanks!</button>
+              <button type="button" class="send-quick-msg py-1 px-2 border border-gray-600 text-gray-400 rounded-full text-[8px] hover:border-neon-yellow hover:text-neon-yellow hover:bg-neon-yellow/10">Rematch fund</button>
+              <button type="button" class="send-quick-msg py-1 px-2 border border-gray-600 text-gray-400 rounded-full text-[8px] hover:border-neon-yellow hover:text-neon-yellow hover:bg-neon-yellow/10">For the squad</button>
+              <button type="button" class="send-quick-msg py-1 px-2 border border-gray-600 text-gray-400 rounded-full text-[8px] hover:border-neon-yellow hover:text-neon-yellow hover:bg-neon-yellow/10">Pay up!</button>
+            </div>
+          </div>
+          <div class="flex justify-end">
+            <button type="button" id="send-tokens-btn" class="border-2 border-neon-yellow text-neon-yellow px-4 py-2 rounded text-[10px] hover:bg-neon-yellow/10 disabled:opacity-50">SEND</button>
           </div>
           <p id="send-feedback" class="text-[10px] mt-2 hidden"></p>
           <div class="mt-4 pt-3 border-t border-gray-700">
@@ -3673,10 +3686,21 @@
         sendAmount.value = Math.max(0, Math.floor(bal));
       });
     }
+    // Quick message chips
+    var sendMessageInput = document.getElementById('send-message');
+    document.querySelectorAll('.send-quick-msg').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        if (sendMessageInput) {
+          sendMessageInput.value = btn.textContent.trim();
+          sendMessageInput.focus();
+        }
+      });
+    });
     if (sendTokensBtn && sendFeedback) {
       sendTokensBtn.addEventListener('click', async function() {
         var toInput = (sendToAddress && sendToAddress.value) ? sendToAddress.value.trim() : '';
         var amount = sendAmount ? parseInt(sendAmount.value, 10) : 0;
+        var sendMsg = sendMessageInput ? sendMessageInput.value.trim().slice(0, 100) : '';
         if (!toInput) { sendFeedback.textContent = 'Enter recipient wallet address or ref code.'; sendFeedback.classList.remove('hidden'); sendFeedback.classList.remove('text-neon-green'); sendFeedback.classList.add('text-neon-pink'); return; }
         if (!amount || amount < 1) { sendFeedback.textContent = 'Enter amount (1+).'; sendFeedback.classList.remove('hidden'); sendFeedback.classList.remove('text-neon-green'); sendFeedback.classList.add('text-neon-pink'); return; }
         var me = typeof getPvpPlayerId === 'function' ? getPvpPlayerId() : null;
@@ -3761,16 +3785,19 @@
           if (wid && wid !== pid) recipientIds.push(wid);
           if (recipientIds.length === 0 && (pid || wid)) recipientIds.push(pid || wid);
           recipientIds.forEach(function(recipientId) {
-            if (recipientId) supabase.from('token_received_notifications').insert({ recipient_player_id: recipientId, sender_name: senderName, amount: amount }).then(function() {});
+            if (recipientId) supabase.from('token_received_notifications').insert({ recipient_player_id: recipientId, sender_name: senderName, amount: amount, message: sendMsg || null }).then(function() {});
           });
           var toLabel = looksLikeRef ? (toRow.data.name || toInput) : (toInput || '').slice(0, 8) + '…';
           var senderPid = (fromRow.data && fromRow.data.player_id ? fromRow.data.player_id : (typeof getPvpPlayerId === 'function' ? getPvpPlayerId() : null)) || '';
-          if (senderPid) supabase.from('token_sends').insert({ sender_player_id: senderPid, recipient_player_id: pid || null, recipient_label: (toRow.data.name || toInput || toLabel || '').toString().trim(), amount: amount }).then(function() {});
+          if (senderPid) supabase.from('token_sends').insert({ sender_player_id: senderPid, recipient_player_id: pid || null, recipient_label: (toRow.data.name || toInput || toLabel || '').toString().trim(), amount: amount, message: sendMsg || null }).then(function() {});
           if (typeof loadSendTransactions === 'function') loadSendTransactions();
-          sendFeedback.textContent = 'Sent ' + amount + ' tokens to ' + toLabel;
+          var confirmText = 'Sent ' + amount + ' tokens to ' + toLabel;
+          if (sendMsg) confirmText += ' — "' + sendMsg + '"';
+          sendFeedback.textContent = confirmText;
           sendFeedback.classList.add('text-neon-green');
           if (sendToAddress) sendToAddress.value = '';
           if (sendAmount) sendAmount.value = '';
+          if (sendMessageInput) sendMessageInput.value = '';
         } catch (e) {
           tokens += amount;
           save();
@@ -3832,7 +3859,7 @@
       var supabase = window.supabaseClient;
       if (!supabase) { listEl.innerHTML = '<span class="text-gray-500">Not available.</span>'; return; }
       listEl.innerHTML = '<span class="text-gray-500">Loading…</span>';
-      supabase.from('token_sends').select('amount, recipient_label, created_at').eq('sender_player_id', me).order('created_at', { ascending: false }).limit(20).then(function(r) {
+      supabase.from('token_sends').select('amount, recipient_label, message, created_at').eq('sender_player_id', me).order('created_at', { ascending: false }).limit(20).then(function(r) {
         if (r.error || !r.data || r.data.length === 0) {
           listEl.innerHTML = '<span class="text-gray-500">No sends yet. Tokens you send appear here.</span>';
           return;
@@ -3841,10 +3868,12 @@
         listEl.innerHTML = r.data.map(function(row) {
           var amt = row.amount != null ? row.amount : 0;
           var label = (row.recipient_label || 'Unknown').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+          var msg = (row.message || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
           var created = row.created_at ? new Date(row.created_at).getTime() : now;
           var ago = now - created;
           var agoStr = ago < 60000 ? 'just now' : ago < 3600000 ? Math.floor(ago / 60000) + ' min ago' : ago < 86400000 ? Math.floor(ago / 3600000) + ' h ago' : Math.floor(ago / 86400000) + ' d ago';
-          return '<div class="py-1 border-b border-gray-700/50 last:border-0">' + amt + ' tokens → ' + label + ' <span class="text-gray-500">' + agoStr + '</span></div>';
+          var msgHtml = msg ? '<div class="text-neon-yellow/70 text-[9px] mt-0.5">&quot;' + msg + '&quot;</div>' : '';
+          return '<div class="py-1.5 border-b border-gray-700/50 last:border-0"><div>' + amt + ' tokens → ' + label + ' <span class="text-gray-500">' + agoStr + '</span></div>' + msgHtml + '</div>';
         }).join('');
       });
     }
@@ -4248,7 +4277,9 @@
           if (!row || (row.recipient_player_id || '').trim() !== meId) return;
           var senderName = (row.sender_name || 'Someone').trim();
           var amt = row.amount != null ? parseInt(row.amount, 10) : 0;
+          var senderMsg = (row.message || '').trim();
           var msg = 'You received ' + (amt > 0 ? amt + ' tokens from ' + senderName : 'tokens from ' + senderName) + '.';
+          if (senderMsg) msg += ' "' + senderMsg + '"';
           if (typeof syncTokensFromLeaderboard === 'function') syncTokensFromLeaderboard(function() {
             try { if (typeof pushNotification === 'function') pushNotification(msg); } catch (e) {}
           });
