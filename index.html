@@ -3568,7 +3568,8 @@
         if (!amount || amount < 1) { sendFeedback.textContent = 'Enter amount (1+).'; sendFeedback.classList.remove('hidden'); sendFeedback.classList.remove('text-neon-green'); sendFeedback.classList.add('text-neon-pink'); return; }
         var me = typeof getPvpPlayerId === 'function' ? getPvpPlayerId() : null;
         if (!me) { sendFeedback.textContent = 'Player id not set. Refresh and try again.'; sendFeedback.classList.remove('hidden'); sendFeedback.classList.add('text-neon-pink'); return; }
-        if (me.toLowerCase() === toInput.toLowerCase()) { sendFeedback.textContent = 'Cannot send to yourself.'; sendFeedback.classList.remove('hidden'); sendFeedback.classList.remove('text-neon-green'); sendFeedback.classList.add('text-neon-pink'); return; }
+        var myRefCode = (localStorage.getItem('tokenClicker_refCode') || '').trim().toUpperCase();
+        if (me.toLowerCase() === toInput.toLowerCase() || (myRefCode && myRefCode === toInput.trim().toUpperCase())) { sendFeedback.textContent = 'Cannot send to yourself.'; sendFeedback.classList.remove('hidden'); sendFeedback.classList.remove('text-neon-green'); sendFeedback.classList.add('text-neon-pink'); return; }
         if (tokens < amount) { sendFeedback.textContent = 'Not enough in-game balance.'; sendFeedback.classList.remove('hidden'); sendFeedback.classList.remove('text-neon-green'); sendFeedback.classList.add('text-neon-pink'); return; }
         var supabase = window.supabaseClient;
         if (!supabase) { sendFeedback.textContent = 'Leaderboard not available. Refresh and try again.'; sendFeedback.classList.remove('hidden'); sendFeedback.classList.add('text-neon-pink'); return; }
@@ -3652,7 +3653,7 @@
           });
           var toLabel = looksLikeRef ? (toRow.data.name || toInput) : (toInput || '').slice(0, 8) + '…';
           var senderPid = (fromRow.data && fromRow.data.player_id ? fromRow.data.player_id : (typeof getPvpPlayerId === 'function' ? getPvpPlayerId() : null)) || '';
-          if (senderPid) supabase.from('token_sends').insert({ sender_player_id: senderPid, recipient_player_id: pid || null, recipient_label: (toRow.data.name || toInput || toLabel || '').toString().trim(), amount: amount }).then(function() {});
+          if (senderPid) await supabase.from('token_sends').insert({ sender_player_id: senderPid, recipient_player_id: pid || null, recipient_label: (toRow.data.name || toInput || toLabel || '').toString().trim(), amount: amount });
           if (typeof loadSendTransactions === 'function') loadSendTransactions();
           sendFeedback.textContent = 'Sent ' + amount + ' tokens to ' + toLabel;
           sendFeedback.classList.add('text-neon-green');
