@@ -6744,6 +6744,87 @@
         }
       }
     });
+
+    /**
+     * Cross-app communication bridge for 1NC Blockchain Web App.
+     * Allows the parent web app (nc-blockchain-web-app-v3) to request game state
+     * via postMessage when the clicker game is embedded in an iframe.
+     */
+    (function initCrossAppBridge() {
+      var ALLOWED_ORIGINS = [
+        'http://localhost:3000',
+        'https://nc-blockchain.github.io',
+        'https://1ncblockchain.com',
+      ];
+
+      function isAllowedOrigin(origin) {
+        return ALLOWED_ORIGINS.some(function(o) { return origin === o || origin.startsWith(o); });
+      }
+
+      function getGameState() {
+        return {
+          totalClicks: parseInt(localStorage.getItem('tokenClicker_totalClicks') || '0', 10),
+          tokens: parseInt(localStorage.getItem('tokenClicker_tokens') || '0', 10),
+          tapPower: parseInt(localStorage.getItem('tokenClicker_tapPower') || '1', 10),
+          playerName: localStorage.getItem('tokenClicker_playerName') || null,
+          playerId: localStorage.getItem('tokenClicker_playerId') || null,
+          walletConnected: !!(localStorage.getItem('tokenClicker_walletAddress')),
+          walletAddress: localStorage.getItem('tokenClicker_walletAddress') || null,
+        };
+      }
+
+      window.addEventListener('message', function(event) {
+        if (!event.origin || !isAllowedOrigin(event.origin)) return;
+        var msg = event.data;
+        if (!msg || typeof msg !== 'object' || msg.source !== '1nc-web-app') return;
+
+        switch (msg.type) {
+          case 'GET_GAME_STATE':
+            event.source.postMessage({
+              source: '1nc-clicker-game',
+              type: 'GAME_STATE',
+              payload: getGameState(),
+            }, event.origin);
+            break;
+
+          case 'GET_LEADERBOARD':
+            if (window.supabaseClient) {
+              window.supabaseClient
+                .from('leaderboard')
+                .select('name, tokens, wallet_address, player_id, pvp_wins')
+                .order('tokens', { ascending: false })
+                .limit(20)
+                .then(function(res) {
+                  event.source.postMessage({
+                    source: '1nc-clicker-game',
+                    type: 'LEADERBOARD_DATA',
+                    payload: res.data || [],
+                  }, event.origin);
+                });
+            }
+            break;
+
+          case 'PING':
+            event.source.postMessage({
+              source: '1nc-clicker-game',
+              type: 'PONG',
+              payload: { version: document.querySelector('meta[name="app-version"]')?.content || '0' },
+            }, event.origin);
+            break;
+        }
+      });
+
+      // Notify parent that game is loaded (if embedded)
+      if (window.parent !== window) {
+        try {
+          window.parent.postMessage({
+            source: '1nc-clicker-game',
+            type: 'GAME_LOADED',
+            payload: getGameState(),
+          }, '*');
+        } catch(e) {}
+      }
+    })();
   </script>
 </body>
 </html>
